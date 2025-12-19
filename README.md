@@ -1,36 +1,171 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TaxHelper
+
+A tax awareness app that lets people track all the tax they pay in everyday life by logging purchases and paychecks.
+
+## Features
+
+- **Track Sales Tax**: Log purchases and see how much sales tax you're paying
+- **Track Income Tax**: Record paycheck withholdings to understand your income tax burden
+- **Visual Insights**: Charts showing tax trends over time, by type, and by merchant
+- **Tax Templates**: Save common tax rates for quick entry
+- **Period Summaries**: View tax totals for today, this month, or this year
+
+## Tech Stack
+
+- **Frontend**: Next.js 16 (App Router) + TypeScript
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Charts**: Recharts
+- **Backend**: Next.js API Routes
+- **Database**: Neon Serverless Postgres
+- **ORM**: Prisma
+- **Auth**: NextAuth.js
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- A Neon database (free tier works great)
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/yourusername/taxhelper.git
+cd taxhelper
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Set up environment variables:
+
+Create a `.env` file with:
+
+```env
+DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-secret-key"
+
+# Optional: For Google OAuth (see setup instructions below)
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+
+# Optional: For email sign-in
+EMAIL_SERVER="smtp://user:pass@smtp.example.com:587"
+EMAIL_FROM="noreply@example.com"
+
+# Optional: Control which auth options appear on the sign-in page
+NEXT_PUBLIC_HAS_GOOGLE_AUTH="true"
+NEXT_PUBLIC_HAS_EMAIL_AUTH="true"
+
+# Optional: Override insights cache TTL in hours (default: 6)
+INSIGHT_CACHE_TTL_HOURS="6"
+```
+
+4. Run database migrations:
+
+```bash
+npx prisma migrate dev
+```
+
+5. Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit [http://localhost:3000](http://localhost:3000) to see the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Development Login
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+For local testing, use the **Development** sign-in option:
+- **Email**: Any email (e.g., `test@example.com`)
+- **Password**: `dev`
 
-## Learn More
+This creates a local user automatically and only works in development mode.
 
-To learn more about Next.js, take a look at the following resources:
+### Google OAuth Setup (TODO)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+To enable Google Sign-In for production:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create or select a project
+3. Navigate to **APIs & Services → Credentials**
+4. Click **Create Credentials → OAuth client ID**
+5. Select **Web application**
+6. Add authorized redirect URI: `http://localhost:3000/api/auth/callback/google` (dev) and your production URL
+7. Copy the Client ID and Client Secret to your `.env` file
 
-## Deploy on Vercel
+## Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/
+│   ├── (app)/           # Authenticated routes
+│   │   ├── dashboard/   # Main dashboard
+│   │   ├── transactions/# Transaction list
+│   │   └── templates/   # Tax templates
+│   ├── api/             # API routes
+│   │   ├── auth/        # NextAuth handlers
+│   │   ├── transactions/# CRUD for transactions
+│   │   ├── templates/   # CRUD for templates
+│   │   └── summary/     # Aggregated data
+│   └── auth/            # Auth pages
+├── components/
+│   ├── dashboard/       # Dashboard components
+│   ├── transactions/    # Transaction components
+│   └── ui/              # shadcn/ui components
+├── lib/
+│   ├── prisma.ts        # Prisma client
+│   ├── auth.ts          # NextAuth config
+│   └── format.ts        # Formatting utilities
+└── types/               # TypeScript types
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## API Endpoints
+
+### Transactions
+
+- `GET /api/transactions` - List transactions (paginated, filterable)
+- `POST /api/transactions` - Create a transaction
+- `GET /api/transactions/[id]` - Get a single transaction
+- `PUT /api/transactions/[id]` - Update a transaction
+- `DELETE /api/transactions/[id]` - Delete a transaction
+
+### Summary
+
+- `GET /api/summary` - Get aggregated tax data (totals, by type, timeseries, top merchants)
+
+### Templates
+
+- `GET /api/templates` - List templates
+- `POST /api/templates` - Create a template
+- `PUT /api/templates/[id]` - Update a template
+- `DELETE /api/templates/[id]` - Delete a template
+
+## Database Schema
+
+- **User**: User accounts with preferences
+- **Transaction**: Individual tax entries (sales tax, income tax, other)
+- **TaxTemplate**: Saved tax rates for quick entry
+- **Account/Session**: NextAuth authentication data
+
+## Deployment
+
+### Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Import the project in Vercel
+3. Add environment variables
+4. Deploy!
+
+The Neon serverless driver works perfectly with Vercel's edge functions.
+
+## License
+
+MIT

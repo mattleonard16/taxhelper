@@ -1,0 +1,185 @@
+// Prisma schema for TaxHelper MVP
+// Using Neon serverless Postgres
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// NextAuth models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Application models
+model User {
+  id            String        @id @default(cuid())
+  name          String?
+  email         String?       @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // User preferences
+  country       String?
+  state         String?
+  defaultTaxRate Decimal?     @db.Decimal(10, 6)
+  currency      String        @default("USD")
+  timezone      String        @default("America/Los_Angeles")
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  transactions  Transaction[]
+  templates     TaxTemplate[]
+  recurringTransactions RecurringTransaction[]
+  insightRuns   InsightRun[]
+}
+
+model Transaction {
+  id          String          @id @default(cuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime
+  type        TransactionType
+  description String?
+  merchant    String?
+  totalAmount Decimal         @db.Decimal(12, 2)
+  taxAmount   Decimal         @db.Decimal(12, 2)
+  currency    String          @default("USD")
+  receiptPath String?         // Path to stored receipt file (invoice-organizer format)
+  receiptName String?         // Original filename of uploaded receipt
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Single column indexes
+  @@index([userId])
+  @@index([date])
+  @@index([type])
+  // Composite indexes for common query patterns
+  @@index([userId, date])           // For date range queries
+  @@index([userId, type, date])     // For filtered type queries
+}
+
+model TaxTemplate {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String
+  merchant  String?
+  taxRate   Decimal         @db.Decimal(10, 6) // 0.08875 for 8.875%
+  type      TransactionType
+  isDefault Boolean         @default(false)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([userId])
+}
+
+model RecurringTransaction {
+  id          String          @id @default(cuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Template data for generated transactions
+  label       String
+  description String?
+  merchant    String?
+  amount      Decimal         @db.Decimal(12, 2)
+  taxRate     Decimal         @db.Decimal(10, 6)
+  type        TransactionType
+  currency    String          @default("USD")
+  
+  // Schedule
+  frequency   RecurringFrequency
+  dayOfMonth  Int?            // 1-28 for monthly (use 28 max to avoid month-end issues)
+  nextRunDate DateTime
+  lastRunDate DateTime?
+  isActive    Boolean         @default(true)
+  
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  
+  @@index([userId])
+  @@index([nextRunDate])
+  @@index([userId, isActive])
+}
+
+model InsightRun {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  range       Int
+  generatedAt DateTime @default(now())
+  insights    Insight[]
+
+  @@index([userId])
+  @@index([userId, range, generatedAt])
+}
+
+model Insight {
+  id                       String      @id @default(cuid())
+  runId                    String
+  run                      InsightRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  type                     InsightType
+  title                    String
+  summary                  String
+  severityScore            Int
+  supportingTransactionIds String[]
+  dismissed                Boolean     @default(false)
+  pinned                   Boolean     @default(false)
+}
+
+enum RecurringFrequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+enum InsightType {
+  QUIET_LEAK
+  TAX_DRAG
+  SPIKE
+  DUPLICATE
+}
+
+enum TransactionType {
+  SALES_TAX
+  INCOME_TAX
+  OTHER
+}
