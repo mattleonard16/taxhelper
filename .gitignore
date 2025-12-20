@@ -48,3 +48,4 @@ next-env.d.ts
 # AI assistant skills and debug logs
 # .factory/skills/
 # antigravity-debug-*.log
+GEMINI.md
