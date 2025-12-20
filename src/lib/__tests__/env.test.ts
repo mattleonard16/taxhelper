@@ -52,6 +52,39 @@ describe('env', () => {
 
             expect(config.GOOGLE_CLIENT_ID).toBe('google-id');
         });
+
+        it('should throw when NEXTAUTH_URL is not a valid URL', () => {
+            process.env.DATABASE_URL = 'postgresql://localhost/test';
+            process.env.NEXTAUTH_URL = 'not-a-url';
+            process.env.NEXTAUTH_SECRET = 'test-secret';
+
+            expect(() => validateEnv()).toThrow('NEXTAUTH_URL must be a valid http(s) URL');
+        });
+
+        it('should throw when NEXTAUTH_URL is not http or https', () => {
+            process.env.DATABASE_URL = 'postgresql://localhost/test';
+            process.env.NEXTAUTH_URL = 'ftp://localhost:3000';
+            process.env.NEXTAUTH_SECRET = 'test-secret';
+
+            expect(() => validateEnv()).toThrow('NEXTAUTH_URL must be a valid http(s) URL');
+        });
+
+        it('should warn when Google OAuth is missing outside test', () => {
+            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            process.env.NODE_ENV = 'development';
+            process.env.DATABASE_URL = 'postgresql://localhost/test';
+            process.env.NEXTAUTH_URL = 'http://localhost:3000';
+            process.env.NEXTAUTH_SECRET = 'test-secret';
+            delete process.env.GOOGLE_CLIENT_ID;
+            delete process.env.GOOGLE_CLIENT_SECRET;
+
+            validateEnv();
+
+            expect(warnSpy).toHaveBeenCalledWith(
+                '[env] Google OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable Google sign-in.'
+            );
+            warnSpy.mockRestore();
+        });
     });
 
     describe('isRateLimitingEnabled', () => {

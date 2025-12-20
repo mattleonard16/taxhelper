@@ -1,13 +1,28 @@
 import { prisma } from "@/lib/prisma";
 import type { Transaction } from "@/types";
-import type { Transaction as PrismaTransaction } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+
+const transactionSelect = {
+  id: true,
+  date: true,
+  type: true,
+  description: true,
+  merchant: true,
+  totalAmount: true,
+  taxAmount: true,
+  currency: true,
+} satisfies Prisma.TransactionSelect;
+
+type TransactionSelectResult = Prisma.TransactionGetPayload<{
+  select: typeof transactionSelect;
+}>;
 
 export type TransactionRepository = {
   listByUserSince: (userId: string, fromDate: Date) => Promise<Transaction[]>;
   getLatestUpdatedAt: (userId: string) => Promise<Date | null>;
 };
 
-const mapTransaction = (transaction: PrismaTransaction): Transaction => ({
+const mapTransaction = (transaction: TransactionSelectResult): Transaction => ({
   id: transaction.id,
   date: transaction.date.toISOString(),
   type: transaction.type,
@@ -28,16 +43,7 @@ export const createTransactionRepository = (
         date: { gte: fromDate },
       },
       orderBy: { date: "desc" },
-      select: {
-        id: true,
-        date: true,
-        type: true,
-        description: true,
-        merchant: true,
-        totalAmount: true,
-        taxAmount: true,
-        currency: true,
-      },
+      select: transactionSelect,
     });
 
     return rawTransactions.map(mapTransaction);

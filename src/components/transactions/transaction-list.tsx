@@ -259,7 +259,7 @@ export const TransactionList = React.memo(function TransactionList({
           Try adjusting your filters or add a new transaction to start tracking.
         </p>
         <p className="mt-2 text-xs text-muted-foreground">
-          Tip: use the Add Transaction button or press "N" to create one faster.
+          Tip: use the Add Transaction button or press &quot;N&quot; to create one faster.
         </p>
       </div>
     );

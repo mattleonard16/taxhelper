@@ -1,27 +1,25 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion, type Variants } from "motion/react";
 import { Camera } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export function FeaturesSection() {
-  const reducedMotion = useReducedMotion();
 
-  const fadeInUp = {
+  const fadeInUp: Variants = {
     hidden: { opacity: 0, y: 40 },
     visible: { 
       opacity: 1, 
       y: 0,
-      transition: { duration: 0.6, ease: "easeOut" }
+      transition: { duration: 0.6, ease: "easeOut" as const }
     }
   };
 
   // Glow animation for mobile - pulses when in view
-  const glowAnimation = {
+  const glowAnimation: Variants = {
     hidden: { opacity: 0 },
     visible: { 
       opacity: 1,
-      transition: { duration: 1, ease: "easeOut" } 
+      transition: { duration: 1, ease: "easeOut" as const } 
     }
   };
 
@@ -35,7 +33,7 @@ export function FeaturesSection() {
         variants={fadeInUp}
       >
         <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          See what you're actually paying
+          See what you&apos;re actually paying
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
           Real examples from everyday spending
@@ -64,7 +62,7 @@ export function FeaturesSection() {
                 </div>
                 <h3 className="mt-4 text-2xl font-bold">That daily coffee adds up</h3>
                 <p className="mt-2 text-muted-foreground">
-                  You've been buying coffee 4 times a week at $5.50 each. Over the last month, that's $88 in purchases—and $7.04 just in tax.
+                  You&apos;ve been buying coffee 4 times a week at $5.50 each. Over the last month, that&apos;s $88 in purchases—and $7.04 just in tax.
                 </p>
                 <div className="mt-6 grid grid-cols-3 gap-4">
                   <div className="rounded-lg border border-border bg-card/30 p-4">
@@ -163,7 +161,7 @@ export function FeaturesSection() {
                 </div>
                 <h3 className="mt-4 text-2xl font-bold">Higher rates at some merchants</h3>
                 <p className="mt-2 text-muted-foreground">
-                  Your electronics purchases are taxed at 9.0%—that's 1% higher than your average. Over $1,247 in spending, that extra 1% cost you $12.47.
+                  Your electronics purchases are taxed at 9.0%—that&apos;s 1% higher than your average. Over $1,247 in spending, that extra 1% cost you $12.47.
                 </p>
               </div>
             </div>
