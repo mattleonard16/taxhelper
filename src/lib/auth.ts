@@ -3,49 +3,61 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import EmailProvider from "next-auth/providers/email";
 import GoogleProvider from "next-auth/providers/google";
+import bcrypt from "bcrypt";
 import { prisma } from "./prisma";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
-    // Development-only credentials provider for easy testing
-    // Login with any email and password "dev"
-    ...(process.env.NODE_ENV === "development"
+    // Email/password credentials provider
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email", placeholder: "you@example.com" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        // Find user by email
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+        });
+
+        if (!user || !user.password) {
+          // User doesn't exist or has no password set
+          return null;
+        }
+
+        // Verify password
+        const isValidPassword = await bcrypt.compare(
+          credentials.password,
+          user.password
+        );
+
+        if (!isValidPassword) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+        };
+      },
+    }),
+    // Optional: Email magic links
+    ...(process.env.EMAIL_SERVER
       ? [
-        CredentialsProvider({
-          name: "Development",
-          credentials: {
-            email: { label: "Email", type: "email", placeholder: "test@example.com" },
-            password: { label: "Password", type: "password", placeholder: "dev" },
-          },
-          async authorize(credentials) {
-            if (credentials?.password !== "dev") {
-              return null;
-            }
-            // Find or create user for development
-            const email = credentials.email || "dev@taxhelper.local";
-            let user = await prisma.user.findUnique({ where: { email } });
-            if (!user) {
-              user = await prisma.user.create({
-                data: { email, name: email.split("@")[0] },
-              });
-            }
-            return { id: user.id, email: user.email, name: user.name };
-          },
+        EmailProvider({
+          server: process.env.EMAIL_SERVER,
+          from: process.env.EMAIL_FROM || "noreply@taxhelper.app",
         }),
       ]
       : []),
-    EmailProvider({
-      server: process.env.EMAIL_SERVER || {
-        host: "localhost",
-        port: 1025,
-        auth: {
-          user: "",
-          pass: "",
-        },
-      },
-      from: process.env.EMAIL_FROM || "noreply@taxhelper.app",
-    }),
+    // Optional: Google OAuth
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ? [
         GoogleProvider({
@@ -77,4 +89,3 @@ export const authOptions: NextAuthOptions = {
     error: "/auth/error",
   },
 };
-
