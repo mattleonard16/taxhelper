@@ -9,10 +9,10 @@ A tax awareness app that helps people track taxes, scan receipts with AI, and di
 - **Visual Insights**: Charts showing tax trends over time, by type, and by merchant
 - **Tax Templates**: Save common tax rates for quick entry
 - **Period Summaries**: View tax totals for today, this month, or this year
-- **🆕 Receipt Scanning**: Upload receipts for automatic OCR + LLM extraction
-- **🆕 Smart Categorization**: GPT-4 auto-categorizes expenses (Meals, Travel, Office, etc.)
-- **🆕 Deductible Detection**: AI flags potentially deductible business expenses
-- **🆕 AI Insights**: Quiet Leaks, Tax Drag, and Spending Spikes detection
+- **Receipt Scanning**: Upload receipts for automatic OCR + LLM extraction
+- **Smart Categorization**: GPT-4 auto-categorizes expenses (Meals, Travel, Office, etc.)
+- **Deductible Detection**: AI flags potentially deductible business expenses
+- **AI Insights**: Quiet Leaks, Tax Drag, and Spending Spikes detection
 
 ## Tech Stack
 
