@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth-utils";
 import { Button } from "@/components/ui/button";
 import { HeroElasticLine } from "@/components/landing/hero-elastic-line";
 import { FeaturesSection } from "@/components/landing/features-section";
+import { InteractiveDemo } from "@/components/landing/interactive-demo";
 
 export default async function HomePage() {
   const session = await getSession();
@@ -75,6 +76,9 @@ export default async function HomePage() {
             </Button>
           </div>
         </div>
+
+        {/* Interactive Demo */}
+        <InteractiveDemo />
 
         {/* Features - Real Examples */}
         <FeaturesSection />
