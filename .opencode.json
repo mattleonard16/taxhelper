@@ -1,5 +1,7 @@
 {
-  "plugin": ["opencode-antigravity-auth@1.0.7"],
+  "plugin": [
+    "opencode-antigravity-auth@1.2.4"
+  ],
   "provider": {
     "google": {
       "models": {
@@ -15,6 +17,13 @@
           "limit": {
             "context": 1048576,
             "output": 65535
+          }
+        },
+        "gemini-3-flash": {
+          "name": "Gemini 3 Flash (Antigravity)",
+          "limit": {
+            "context": 1048576,
+            "output": 65536
           }
         },
         "claude-sonnet-4-5": {
