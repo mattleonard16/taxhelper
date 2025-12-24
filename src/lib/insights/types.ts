@@ -7,9 +7,26 @@ export const INSIGHT_TYPES = {
   TAX_DRAG: 'TAX_DRAG',
   SPIKE: 'SPIKE',
   DUPLICATE: 'DUPLICATE',
+  DEDUCTION: 'DEDUCTION',
 } as const;
 
 export type InsightType = (typeof INSIGHT_TYPES)[keyof typeof INSIGHT_TYPES];
+
+/**
+ * Explains why an insight was generated - shown in "Why am I seeing this?" UI
+ */
+export interface InsightExplanation {
+  /** Human-readable reason for the insight */
+  reason: string;
+  /** The threshold(s) that were exceeded */
+  thresholds: {
+    name: string;
+    actual: number | string;
+    threshold: number | string;
+  }[];
+  /** Suggested action the user can take */
+  suggestion?: string;
+}
 
 export interface Insight {
   id?: string;
@@ -20,6 +37,8 @@ export interface Insight {
   supportingTransactionIds: string[];
   dismissed?: boolean;
   pinned?: boolean;
+  /** Explains why this insight was generated */
+  explanation?: InsightExplanation;
 }
 
 // Thresholds for insight detection

@@ -12,10 +12,13 @@ import {
   TrendingUp,
   Copy,
   Repeat,
+  BadgeDollarSign,
   Pin,
   PinOff,
   Eye,
   EyeOff,
+  HelpCircle,
+  X,
 } from "lucide-react";
 import type { Insight } from "@/lib/insights";
 import type { Transaction } from "@/types";
@@ -39,6 +42,7 @@ const INSIGHT_ICONS = {
   TAX_DRAG: TrendingUp,
   SPIKE: AlertTriangle,
   DUPLICATE: Copy,
+  DEDUCTION: BadgeDollarSign,
 } as const;
 
 const INSIGHT_COLORS = {
@@ -46,6 +50,7 @@ const INSIGHT_COLORS = {
   TAX_DRAG: "bg-rose-500/20 text-rose-600 border-rose-500/30",
   SPIKE: "bg-orange-500/20 text-orange-600 border-orange-500/30",
   DUPLICATE: "bg-purple-500/20 text-purple-600 border-purple-500/30",
+  DEDUCTION: "bg-emerald-500/20 text-emerald-600 border-emerald-500/30",
 } as const;
 
 function getSeverityColor(score: number): string {
@@ -68,6 +73,7 @@ export function InsightCard({
   onUpdateInsightState,
 }: InsightCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [explanationVisible, setExplanationVisible] = useState(false);
   const [extraTransactions, setExtraTransactions] = useState<Transaction[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -91,8 +97,8 @@ export function InsightCard({
     setLoadingTransactions(false);
   }, [insightKey]);
 
-  const Icon = INSIGHT_ICONS[insight.type];
-  const colorClass = INSIGHT_COLORS[insight.type];
+  const Icon = INSIGHT_ICONS[insight.type] ?? TrendingUp;
+  const colorClass = INSIGHT_COLORS[insight.type] ?? "bg-slate-500/20 text-slate-600 border-slate-500/30";
 
   const supportingIdSet = useMemo(() => new Set(supportingIds), [supportingIds]);
 
@@ -287,6 +293,75 @@ export function InsightCard({
         </CardHeader>
 
         <CardContent className="pt-0">
+          {/* Why am I seeing this? section */}
+          {insight.explanation && (
+            <div className="mb-3">
+              {!explanationVisible ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2 text-xs text-muted-foreground hover:text-foreground"
+                  aria-label="Why am I seeing this?"
+                  onClick={() => setExplanationVisible(true)}
+                >
+                  <HelpCircle className="h-3.5 w-3.5" />
+                  Why am I seeing this?
+                </Button>
+              ) : (
+                <div className="rounded-lg border border-border/50 bg-muted/30 p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-sm font-medium">Why am I seeing this?</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      aria-label="Hide explanation"
+                      onClick={() => setExplanationVisible(false)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                  
+                  <p className="mb-3 text-sm text-muted-foreground">
+                    {insight.explanation.reason}
+                  </p>
+                  
+                  {insight.explanation.thresholds.length > 0 && (
+                    <div className="mb-3 space-y-1.5">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        Thresholds met:
+                      </span>
+                      <div className="grid gap-1.5">
+                        {insight.explanation.thresholds.map((threshold, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between rounded bg-background/50 px-2 py-1 text-xs"
+                          >
+                            <span className="capitalize text-muted-foreground">
+                              {threshold.name}
+                            </span>
+                            <span className="font-mono">
+                              <span className="text-foreground">{String(threshold.actual)}</span>
+                              <span className="mx-1 text-muted-foreground/60">vs</span>
+                              <span className="text-muted-foreground">{String(threshold.threshold)}</span>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {insight.explanation.suggestion && (
+                    <p className="rounded bg-primary/5 px-2 py-1.5 text-xs text-muted-foreground">
+                      <span className="font-medium">Suggestion:</span>{" "}
+                      {insight.explanation.suggestion}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <Button
             variant="ghost"
             size="sm"

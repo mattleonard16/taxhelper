@@ -3,6 +3,7 @@ import { getAuthUser, ApiErrors, getRequestId, attachRequestId } from '@/lib/api
 import { checkRateLimit, RateLimitConfig, rateLimitedResponse } from '@/lib/rate-limit';
 import { insightsQuerySchema } from '@/lib/schemas';
 import { getInsights } from '@/lib/insights';
+import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
@@ -41,7 +42,22 @@ export async function GET(request: NextRequest) {
     const { range } = parseResult.data;
     const refreshParam = searchParams.get('refresh');
     const forceRefresh = refreshParam === '1' || refreshParam === 'true';
-    const insights = await getInsights(user.id, range, { forceRefresh });
+    const userPreferences = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: {
+        isFreelancer: true,
+        worksFromHome: true,
+        hasHealthInsurance: true,
+      },
+    });
+    const insights = await getInsights(user.id, range, {
+      forceRefresh,
+      userContext: {
+        isFreelancer: userPreferences?.isFreelancer ?? undefined,
+        worksFromHome: userPreferences?.worksFromHome ?? undefined,
+        hasHealthInsurance: userPreferences?.hasHealthInsurance ?? undefined,
+      },
+    });
 
     const response = NextResponse.json({ insights });
     const cacheControl = forceRefresh

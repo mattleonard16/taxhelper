@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -9,7 +9,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { createWorker, Worker } from "tesseract.js";
+import type { TransactionType } from "@/lib/schemas";
 
 interface ExtractedData {
     merchant: string | null;
@@ -22,15 +24,28 @@ interface ReceiptScannerProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onExtract: (data: ExtractedData) => void;
+    transactionType?: TransactionType;
 }
 
-export function ReceiptScanner({ open, onOpenChange, onExtract }: ReceiptScannerProps) {
+export function ReceiptScanner({ open, onOpenChange, onExtract, transactionType = "SALES_TAX" }: ReceiptScannerProps) {
     const [scanning, setScanning] = useState(false);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const workerRef = useRef<Worker | null>(null);
+
+    // Clean up Tesseract worker on unmount to prevent resource leaks
+    useEffect(() => {
+        return () => {
+            if (workerRef.current) {
+                workerRef.current.terminate().catch(() => {
+                    // Ignore termination errors on cleanup
+                });
+                workerRef.current = null;
+            }
+        };
+    }, []);
 
     const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -68,11 +83,39 @@ export function ReceiptScanner({ open, onOpenChange, onExtract }: ReceiptScanner
             // Recognize text
             const { data } = await workerRef.current.recognize(file);
             const text = data.text;
+            const confidence = data.confidence;
 
-            // Parse the extracted text
+            // Parse the extracted text for form pre-fill
             const extracted = parseReceiptText(text);
 
-            // Pass extracted data to parent
+            // Upload to API (async mode) so receipt jobs are tracked
+            // This populates Receipt Intelligence stats on dashboard
+            try {
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("ocrText", text);
+                formData.append("type", transactionType);
+                if (typeof confidence === "number") {
+                    formData.append("ocrConfidence", String(confidence));
+                }
+
+                // Fire-and-forget: we don't block the UI on the upload
+                fetch("/api/receipts/upload?async=1", {
+                    method: "POST",
+                    body: formData,
+                }).then((res) => {
+                    if (!res.ok) {
+                        toast.error("Receipt upload failed. Stats may not update.");
+                    }
+                }).catch(() => {
+                    toast.error("Receipt upload failed. Stats may not update.");
+                });
+            } catch (uploadErr) {
+                // Non-critical: log but don't fail the scan
+                console.error("Error uploading receipt:", uploadErr);
+            }
+
+            // Pass extracted data to parent for form pre-fill
             onExtract(extracted);
             onOpenChange(false);
         } catch (err) {

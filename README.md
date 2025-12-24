@@ -1,6 +1,6 @@
 # TaxHelper
 
-A tax awareness app that lets people track all the tax they pay in everyday life by logging purchases and paychecks.
+A tax awareness app that helps people track taxes, scan receipts with AI, and discover deductible expenses.
 
 ## Features
 
@@ -9,6 +9,10 @@ A tax awareness app that lets people track all the tax they pay in everyday life
 - **Visual Insights**: Charts showing tax trends over time, by type, and by merchant
 - **Tax Templates**: Save common tax rates for quick entry
 - **Period Summaries**: View tax totals for today, this month, or this year
+- **🆕 Receipt Scanning**: Upload receipts for automatic OCR + LLM extraction
+- **🆕 Smart Categorization**: GPT-4 auto-categorizes expenses (Meals, Travel, Office, etc.)
+- **🆕 Deductible Detection**: AI flags potentially deductible business expenses
+- **🆕 AI Insights**: Quiet Leaks, Tax Drag, and Spending Spikes detection
 
 ## Tech Stack
 
@@ -65,6 +69,9 @@ NEXT_PUBLIC_HAS_EMAIL_AUTH="true"
 
 # Optional: Override insights cache TTL in hours (default: 6)
 INSIGHT_CACHE_TTL_HOURS="6"
+
+# Required for LLM-powered receipt extraction
+OPENAI_API_KEY="sk-proj-..."
 ```
 
 4. Run database migrations:

@@ -1,10 +1,11 @@
 import type { Transaction } from '@/types';
-import { INSIGHT_TYPES, QUIET_LEAK_THRESHOLDS, type Insight } from './types';
+import { INSIGHT_TYPES, QUIET_LEAK_THRESHOLDS, type Insight, type InsightExplanation } from './types';
 
 interface MerchantGroup {
   merchant: string;
   transactions: Transaction[];
   total: number;
+  maxIndividualAmount: number;
 }
 
 export function detectQuietLeaks(transactions: Transaction[]): Insight[] {
@@ -33,7 +34,8 @@ export function detectQuietLeaks(transactions: Transaction[]): Insight[] {
     const total = txns.reduce((sum, t) => sum + parseFloat(t.totalAmount), 0);
     if (total < MIN_CUMULATIVE_TOTAL) continue;
 
-    groups.push({ merchant, transactions: txns, total });
+    const maxIndividualAmount = Math.max(...txns.map(t => parseFloat(t.totalAmount)));
+    groups.push({ merchant, transactions: txns, total, maxIndividualAmount });
   }
 
   // Convert to insights
@@ -42,12 +44,35 @@ export function detectQuietLeaks(transactions: Transaction[]): Insight[] {
     const count = group.transactions.length;
     const formattedTotal = `$${group.total.toFixed(2)}`;
 
+    const explanation: InsightExplanation = {
+      reason: `You have recurring small purchases at ${group.merchant} that add up over time.`,
+      thresholds: [
+        {
+          name: 'occurrences',
+          actual: count,
+          threshold: MIN_OCCURRENCES,
+        },
+        {
+          name: 'cumulative total',
+          actual: formattedTotal,
+          threshold: `$${MIN_CUMULATIVE_TOTAL}`,
+        },
+        {
+          name: 'individual amount',
+          actual: `≤$${group.maxIndividualAmount.toFixed(2)}`,
+          threshold: `≤$${MAX_INDIVIDUAL_AMOUNT}`,
+        },
+      ],
+      suggestion: `Consider whether these frequent purchases at ${group.merchant} are necessary, or if you could reduce them.`,
+    };
+
     return {
       type: INSIGHT_TYPES.QUIET_LEAK,
       title: `Quiet Leak: ${group.merchant}`,
       summary: `${count} purchases totaling ${formattedTotal}`,
       severityScore: severity,
       supportingTransactionIds: group.transactions.map((t) => t.id),
+      explanation,
     };
   });
 }

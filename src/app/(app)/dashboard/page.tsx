@@ -9,6 +9,9 @@ import { TaxByTypeChart } from "@/components/dashboard/tax-by-type-chart";
 import { TopMerchants } from "@/components/dashboard/top-merchants";
 import { DailyTaxInsights } from "@/components/dashboard/daily-tax-insights";
 import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
+import { ReceiptOrchestrationStats } from "@/components/dashboard/receipt-orchestration-stats";
+import { CategoryBreakdownChart, CategoryData } from "@/components/dashboard/category-breakdown-chart";
+import { DeductibleSummary } from "@/components/dashboard/deductible-summary";
 import { TransactionForm } from "@/components/transactions/transaction-form";
 import { TransactionList } from "@/components/transactions/transaction-list";
 import { getDateRanges } from "@/lib/format";
@@ -26,6 +29,13 @@ export default function DashboardPage() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [receiptStats, setReceiptStats] = useState<{
+    receipts: { total: number; processed: number; pending: number; failed: number };
+    tax: { totalPaid: string; totalSpent: string; transactionCount: number };
+    deductions: { total: string; count: number };
+    categories: CategoryData[];
+    avgConfidence: number | null;
+  } | null>(null);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -47,7 +57,7 @@ export default function DashboardPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      await fetch("/api/recurring/generate", { method: "POST" }).catch(() => {});
+      await fetch("/api/recurring/generate", { method: "POST" }).catch(() => { });
 
       const { thisYear } = getDateRanges();
       const [summaryRes, transactionsRes] = await Promise.all([
@@ -61,6 +71,12 @@ export default function DashboardPage() {
       if (transactionsRes.ok) {
         const data = await transactionsRes.json();
         setTransactions(data.transactions);
+      }
+
+      // Fetch receipt orchestration stats
+      const receiptStatsRes = await fetch("/api/receipts/stats");
+      if (receiptStatsRes.ok) {
+        setReceiptStats(await receiptStatsRes.json());
       }
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -180,6 +196,27 @@ export default function DashboardPage() {
             />
             <TopMerchants merchants={summary.topMerchants} />
           </div>
+
+          {receiptStats && (
+            <>
+              <ReceiptOrchestrationStats
+                receipts={receiptStats.receipts}
+                tax={receiptStats.tax}
+              />
+              
+              <DeductibleSummary
+                total={receiptStats.deductions.total}
+                count={receiptStats.deductions.count}
+                totalSpent={receiptStats.tax.totalSpent}
+                avgConfidence={receiptStats.avgConfidence}
+              />
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <CategoryBreakdownChart categories={receiptStats.categories} />
+                <div /> {/* Placeholder for balance */}
+              </div>
+            </>
+          )}
         </>
       )}
 
@@ -214,4 +251,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

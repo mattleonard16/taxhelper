@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import type { Insight } from "./types";
+import { Prisma } from "@prisma/client";
+import type { Insight, InsightExplanation } from "./types";
 import type { Insight as PrismaInsight, InsightRun as PrismaInsightRun } from "@prisma/client";
 
 export type StoredInsight = Insight & {
@@ -26,6 +27,56 @@ export type InsightRepository = {
   ) => Promise<StoredInsight | null>;
 };
 
+const isNumberOrString = (value: unknown): value is number | string =>
+  typeof value === "number" || typeof value === "string";
+
+const isThresholdEntry = (
+  value: unknown
+): value is { name: string; actual: number | string; threshold: number | string } => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+  return (
+    typeof obj.name === "string" &&
+    isNumberOrString(obj.actual) &&
+    isNumberOrString(obj.threshold)
+  );
+};
+
+const parseExplanation = (value: Prisma.JsonValue | null): InsightExplanation | undefined => {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+  if (typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const obj = value as Record<string, unknown>;
+  if (typeof obj.reason !== "string") {
+    return undefined;
+  }
+
+  const thresholds = Array.isArray(obj.thresholds) ? obj.thresholds : [];
+  const parsedThresholds = thresholds.filter(isThresholdEntry).map((threshold) => ({
+    name: threshold.name,
+    actual: threshold.actual,
+    threshold: threshold.threshold,
+  }));
+
+  const explanation: InsightExplanation = {
+    reason: obj.reason,
+    thresholds: parsedThresholds,
+  };
+
+  if (typeof obj.suggestion === "string") {
+    explanation.suggestion = obj.suggestion;
+  }
+
+  return explanation;
+};
+
 const mapInsight = (record: PrismaInsight): StoredInsight => ({
   id: record.id,
   type: record.type,
@@ -35,6 +86,7 @@ const mapInsight = (record: PrismaInsight): StoredInsight => ({
   supportingTransactionIds: record.supportingTransactionIds ?? [],
   dismissed: record.dismissed,
   pinned: record.pinned,
+  explanation: parseExplanation(record.explanation),
 });
 
 const mapRun = (
@@ -72,6 +124,9 @@ export const createInsightRepository = (client = prisma): InsightRepository => (
             supportingTransactionIds: insight.supportingTransactionIds,
             dismissed: insight.dismissed ?? false,
             pinned: insight.pinned ?? false,
+            explanation: insight.explanation
+              ? (insight.explanation as unknown as Prisma.InputJsonValue)
+              : Prisma.JsonNull,
           })),
         },
       },

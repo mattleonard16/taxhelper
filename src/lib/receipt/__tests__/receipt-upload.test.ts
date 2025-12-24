@@ -101,7 +101,7 @@ TOTAL         $49.12
 
             const result = parseReceiptOCR(text);
 
-            expect(result.vendor).toBe('WALMART');
+            expect(result.merchant).toBe('WALMART');
         });
 
         it('should extract total amount', () => {
@@ -110,7 +110,7 @@ TOTAL $123.45`;
 
             const result = parseReceiptOCR(text);
 
-            expect(result.totalAmount).toBe(123.45);
+            expect(result.total).toBe(123.45);
         });
 
         it('should extract tax amount', () => {
@@ -120,7 +120,7 @@ TOTAL $110.50`;
 
             const result = parseReceiptOCR(text);
 
-            expect(result.taxAmount).toBe(10.50);
+            expect(result.tax).toBe(10.50);
         });
 
         it('should extract date in various formats', () => {
@@ -142,13 +142,19 @@ TOTAL $50.00`;
 
             const result = parseReceiptOCR(text);
 
-            expect(result.vendor).toBeNull();
-            expect(result.totalAmount).toBeNull();
-            expect(result.taxAmount).toBeNull();
+            expect(result.merchant).toBeNull();
+            expect(result.total).toBeNull();
+            expect(result.tax).toBeNull();
             expect(result.date).toBeNull();
+            expect(result.subtotal).toBeNull();
+            const items = result.items ?? [];
+            const confidence = typeof result.confidence === 'number' ? result.confidence : Number.NaN;
+
+            expect(items).toHaveLength(0);
+            expect(confidence).toBeLessThan(0.4);
         });
 
-        it('should extract description from item lines', () => {
+        it('should extract items from item lines', () => {
             const text = `WALMART
 GROCERIES - PRODUCE    $25.00
 GROCERIES - DAIRY      $15.00
@@ -157,7 +163,32 @@ TOTAL                  $43.20`;
 
             const result = parseReceiptOCR(text);
 
-            expect(result.description).toContain('GROCERIES');
+            const items = result.items ?? [];
+
+            expect(items.map((item) => item.description)).toContain('GROCERIES - PRODUCE');
+        });
+
+        it('should extract subtotal when present', () => {
+            const text = `STORE NAME
+SUBTOTAL $80.00
+TAX $6.40
+TOTAL $86.40`;
+
+            const result = parseReceiptOCR(text);
+
+            expect(result.subtotal).toBe(80.00);
+        });
+
+        it('should boost confidence when OCR confidence is high', () => {
+            const text = `STORE NAME
+TOTAL $42.00
+03/10/2024`;
+
+            const result = parseReceiptOCR(text, { ocrConfidence: 0.95 });
+
+            const confidence = typeof result.confidence === 'number' ? result.confidence : Number.NaN;
+
+            expect(confidence).toBeGreaterThan(0.7);
         });
     });
 });

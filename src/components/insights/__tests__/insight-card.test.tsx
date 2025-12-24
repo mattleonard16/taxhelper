@@ -2,8 +2,18 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { InsightCard } from '../insight-card';
-import type { Insight } from '@/lib/insights';
+import type { Insight, InsightExplanation } from '@/lib/insights';
 import type { Transaction } from '@/types';
+
+const defaultExplanation: InsightExplanation = {
+  reason: 'You have recurring small purchases at Coffee that add up over time.',
+  thresholds: [
+    { name: 'occurrences', actual: 3, threshold: 3 },
+    { name: 'cumulative total', actual: '$53.40', threshold: '$50' },
+    { name: 'individual amount', actual: '≤$20.00', threshold: '≤$20' },
+  ],
+  suggestion: 'Consider whether these frequent purchases at Coffee are necessary.',
+};
 
 function createInsight(overrides: Partial<Insight> = {}): Insight {
   return {
@@ -12,6 +22,7 @@ function createInsight(overrides: Partial<Insight> = {}): Insight {
     summary: '3 purchases totaling $53.40',
     severityScore: 2,
     supportingTransactionIds: ['tx_1', 'tx_2'],
+    explanation: defaultExplanation,
     ...overrides,
   };
 }
@@ -90,5 +101,103 @@ describe('InsightCard', () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
   });
-});
 
+  describe('Why am I seeing this? explainability', () => {
+    it('shows "Why am I seeing this?" button when insight has explanation', () => {
+      render(
+        <InsightCard
+          insight={createInsight()}
+          transactions={[]}
+          onEditTransaction={onEditTransaction}
+          onDeleteTransaction={onDeleteTransaction}
+        />
+      );
+
+      expect(screen.getByRole('button', { name: /why am i seeing this/i })).toBeInTheDocument();
+    });
+
+    it('does not show "Why am I seeing this?" button when insight has no explanation', () => {
+      render(
+        <InsightCard
+          insight={createInsight({ explanation: undefined })}
+          transactions={[]}
+          onEditTransaction={onEditTransaction}
+          onDeleteTransaction={onDeleteTransaction}
+        />
+      );
+
+      expect(screen.queryByRole('button', { name: /why am i seeing this/i })).not.toBeInTheDocument();
+    });
+
+    it('shows explanation reason when button is clicked', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <InsightCard
+          insight={createInsight()}
+          transactions={[]}
+          onEditTransaction={onEditTransaction}
+          onDeleteTransaction={onDeleteTransaction}
+        />
+      );
+
+      await user.click(screen.getByRole('button', { name: /why am i seeing this/i }));
+
+      expect(screen.getByText(/recurring small purchases/i)).toBeInTheDocument();
+    });
+
+    it('shows threshold details when expanded', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <InsightCard
+          insight={createInsight()}
+          transactions={[]}
+          onEditTransaction={onEditTransaction}
+          onDeleteTransaction={onDeleteTransaction}
+        />
+      );
+
+      await user.click(screen.getByRole('button', { name: /why am i seeing this/i }));
+
+      expect(screen.getByText(/occurrences/i)).toBeInTheDocument();
+      expect(screen.getByText(/cumulative total/i)).toBeInTheDocument();
+    });
+
+    it('shows suggestion when available', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <InsightCard
+          insight={createInsight()}
+          transactions={[]}
+          onEditTransaction={onEditTransaction}
+          onDeleteTransaction={onDeleteTransaction}
+        />
+      );
+
+      await user.click(screen.getByRole('button', { name: /why am i seeing this/i }));
+
+      expect(screen.getByText(/consider whether these frequent purchases/i)).toBeInTheDocument();
+    });
+
+    it('can collapse explanation after expanding', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <InsightCard
+          insight={createInsight()}
+          transactions={[]}
+          onEditTransaction={onEditTransaction}
+          onDeleteTransaction={onDeleteTransaction}
+        />
+      );
+
+      await user.click(screen.getByRole('button', { name: /why am i seeing this/i }));
+      expect(screen.getByText(/recurring small purchases/i)).toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: /hide explanation/i }));
+      expect(screen.queryByText(/recurring small purchases/i)).not.toBeInTheDocument();
+    });
+  });
+});

@@ -1,17 +1,20 @@
 import { detectQuietLeaks } from './quiet-leaks';
 import { detectTaxDrag } from './tax-drag';
 import { detectSpikes } from './spikes';
+import { detectDeductionInsights } from './deductions';
 import type { Insight } from './types';
 import { createInsightRepository } from './insight-repository';
 import { createTransactionRepository } from './transaction-repository';
 import { isInsightRunFresh } from './cache-policy';
 import { sortInsights } from './sort-insights';
 import { mergeInsightState } from './insight-state';
+import type { DeductionContext } from '@/lib/deductions';
 
-export { type Insight, type InsightType, INSIGHT_TYPES } from './types';
+export { type Insight, type InsightType, type InsightExplanation, INSIGHT_TYPES } from './types';
 
 type GetInsightsOptions = {
   forceRefresh?: boolean;
+  userContext?: DeductionContext;
 };
 
 export async function getInsights(
@@ -38,8 +41,9 @@ export async function getInsights(
   const quietLeaks = detectQuietLeaks(transactions);
   const taxDrag = detectTaxDrag(transactions);
   const spikes = detectSpikes(transactions);
+  const deductions = detectDeductionInsights(transactions, options.userContext);
 
-  const nextInsights = [...quietLeaks, ...taxDrag, ...spikes];
+  const nextInsights = [...quietLeaks, ...taxDrag, ...spikes, ...deductions];
   const mergedInsights = mergeInsightState(nextInsights, cachedRun?.insights ?? []);
   const orderedInsights = sortInsights(mergedInsights);
   const savedRun = await insightRepository.createRun(userId, rangeDays, orderedInsights);
@@ -51,3 +55,4 @@ export async function getInsights(
 export { detectQuietLeaks } from './quiet-leaks';
 export { detectTaxDrag } from './tax-drag';
 export { detectSpikes } from './spikes';
+export { detectDeductionInsights } from './deductions';

@@ -18,6 +18,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/transactions", label: "Transactions" },
   { href: "/insights", label: "Insights" },
+  { href: "/deductions", label: "Deductions" },
   { href: "/templates", label: "Templates" },
   { href: "/recurring", label: "Recurring" },
   { href: "/settings", label: "Settings" },

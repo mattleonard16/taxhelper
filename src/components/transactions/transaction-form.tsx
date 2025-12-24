@@ -438,6 +438,7 @@ export function TransactionForm({
         open={scannerOpen}
         onOpenChange={setScannerOpen}
         onExtract={handleReceiptExtract}
+        transactionType={type as "SALES_TAX" | "INCOME_TAX" | "OTHER"}
       />
     </>
   );

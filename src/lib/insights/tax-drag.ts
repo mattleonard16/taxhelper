@@ -1,5 +1,5 @@
 import type { Transaction } from '@/types';
-import { INSIGHT_TYPES, TAX_DRAG_THRESHOLDS, type Insight } from './types';
+import { INSIGHT_TYPES, TAX_DRAG_THRESHOLDS, type Insight, type InsightExplanation } from './types';
 
 interface MerchantTaxData {
   merchant: string;
@@ -47,12 +47,30 @@ export function detectTaxDrag(transactions: Transaction[]): Insight[] {
     const ratePercent = (data.effectiveRate * 100).toFixed(1);
     const formattedTotal = `$${data.totalSpent.toFixed(0)}`;
 
+    const explanation: InsightExplanation = {
+      reason: `${data.merchant} has a higher effective tax rate than typical merchants.`,
+      thresholds: [
+        {
+          name: 'effective tax rate',
+          actual: `${ratePercent}%`,
+          threshold: `${MIN_TAX_RATE * 100}%`,
+        },
+        {
+          name: 'total spent',
+          actual: formattedTotal,
+          threshold: `$${MIN_TOTAL_SPENT}`,
+        },
+      ],
+      suggestion: `Consider shopping at alternative merchants with lower tax rates, or verify these tax charges are correct.`,
+    };
+
     return {
       type: INSIGHT_TYPES.TAX_DRAG,
       title: `High Tax: ${data.merchant}`,
       summary: `${ratePercent}% effective rate on ${formattedTotal}`,
       severityScore: severity,
       supportingTransactionIds: data.transactions.map((t) => t.id),
+      explanation,
     };
   });
 }

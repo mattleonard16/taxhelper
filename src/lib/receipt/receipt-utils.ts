@@ -137,3 +137,21 @@ export function isValidReceiptFile(filename: string, mimeType?: string): boolean
     
     return false;
 }
+
+/**
+ * Converts an ArrayBuffer to a base64 string.
+ * Uses Buffer when available, otherwise falls back to btoa.
+ */
+export function arrayBufferToBase64(buffer: ArrayBuffer): string {
+    if (typeof Buffer !== 'undefined') {
+        return Buffer.from(buffer).toString('base64');
+    }
+
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    for (let i = 0; i < bytes.length; i += 1) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+
+    return btoa(binary);
+}

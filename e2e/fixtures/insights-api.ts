@@ -1,5 +1,15 @@
 import type { Page, Route } from "@playwright/test";
 
+type InsightExplanationFixture = {
+  reason: string;
+  thresholds: {
+    name: string;
+    actual: number | string;
+    threshold: number | string;
+  }[];
+  suggestion?: string;
+};
+
 type InsightFixture = {
   id?: string;
   type: "QUIET_LEAK" | "TAX_DRAG" | "SPIKE" | "DUPLICATE";
@@ -9,6 +19,7 @@ type InsightFixture = {
   supportingTransactionIds: string[];
   dismissed?: boolean;
   pinned?: boolean;
+  explanation?: InsightExplanationFixture;
 };
 
 type TransactionFixture = {
@@ -52,6 +63,14 @@ const defaultInsight: InsightFixture = {
   supportingTransactionIds: [defaultTransaction.id],
   dismissed: false,
   pinned: false,
+  explanation: {
+    reason: "You have recurring small purchases at Acme Supplies that add up over time.",
+    thresholds: [
+      { name: "occurrences", actual: 5, threshold: 3 },
+      { name: "cumulative total", actual: "$62.50", threshold: "$50" },
+    ],
+    suggestion: "Consider whether these frequent purchases are necessary.",
+  },
 };
 
 const defaultSettings: UserSettingsFixture = {

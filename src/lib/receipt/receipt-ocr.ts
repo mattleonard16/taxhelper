@@ -1,55 +1,123 @@
 /**
- * OCR parsing utilities for receipt text extraction
- * Extracts vendor, total, tax, date, and description from receipt text
+ * OCR parsing utilities for receipt text extraction.
+ * Extracts merchant, subtotal, tax, total, date, and items from receipt text.
  */
 
-export interface OCRResult {
-    vendor: string | null;
-    totalAmount: number | null;
-    taxAmount: number | null;
+export interface ReceiptItem {
+    description: string;
+    quantity?: number | null;
+    unitPrice?: number | null;
+    total?: number | null;
+}
+
+export interface ReceiptExtraction {
+    merchant: string | null;
     date: string | null;
-    description: string | null;
+    subtotal: number | null;
+    tax: number | null;
+    total: number | null;
+    items: ReceiptItem[];
+    confidence: number;
+    // LLM-powered categorization fields
+    category?: string;
+    categoryCode?: string;
+    isDeductible?: boolean;
+}
+
+export interface ReceiptParseOptions {
+    ocrConfidence?: number | null;
 }
 
 /**
- * Parses OCR text from a receipt to extract structured data
+ * Parses OCR text from a receipt to extract structured data.
  */
-export function parseReceiptOCR(text: string): OCRResult {
-    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+export function parseReceiptOCR(text: string, options: ReceiptParseOptions = {}): ReceiptExtraction {
+    const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
 
-    const result: OCRResult = {
-        vendor: null,
-        totalAmount: null,
-        taxAmount: null,
-        date: null,
-        description: null,
+    let subtotal = extractSubtotal(text);
+    const tax = extractTax(text);
+    let total = extractTotal(text);
+    const items = extractItems(lines);
+
+    if (subtotal === null && total !== null && tax !== null) {
+        subtotal = roundCurrency(total - tax);
+    }
+
+    if (total === null && subtotal !== null && tax !== null) {
+        total = roundCurrency(subtotal + tax);
+    }
+
+    const extraction = {
+        merchant: extractMerchant(lines),
+        subtotal,
+        tax,
+        total,
+        date: extractDate(text),
+        items,
     };
 
-    // Extract vendor from first meaningful line
-    result.vendor = extractVendor(lines);
+    return {
+        ...extraction,
+        confidence: calculateReceiptConfidence(extraction, options.ocrConfidence),
+    };
+}
 
-    // Extract total amount
-    result.totalAmount = extractTotal(text);
+export function createEmptyReceiptExtraction(): ReceiptExtraction {
+    return {
+        merchant: null,
+        date: null,
+        subtotal: null,
+        tax: null,
+        total: null,
+        items: [],
+        confidence: 0,
+    };
+}
 
-    // Extract tax amount
-    result.taxAmount = extractTax(text);
+export function summarizeReceiptItems(items: ReceiptItem[], maxItems = 3): string | null {
+    const names = items.map((item) => item.description).filter(Boolean);
+    if (names.length === 0) return null;
 
-    // Extract date
-    result.date = extractDate(text);
+    const unique = [...new Set(names)];
+    return unique.slice(0, maxItems).join(', ');
+}
 
-    // Extract description from item lines
-    result.description = extractDescription(lines);
+export function calculateReceiptConfidence(
+    extraction: Omit<ReceiptExtraction, 'confidence'>,
+    ocrConfidence?: number | null
+): number {
+    const weights = {
+        merchant: 0.2,
+        date: 0.15,
+        total: 0.3,
+        tax: 0.1,
+        subtotal: 0.1,
+        items: 0.15,
+    };
 
-    return result;
+    let dataScore = 0;
+    if (extraction.merchant) dataScore += weights.merchant;
+    if (extraction.date) dataScore += weights.date;
+    if (extraction.total !== null) dataScore += weights.total;
+    if (extraction.tax !== null) dataScore += weights.tax;
+    if (extraction.subtotal !== null) dataScore += weights.subtotal;
+    if (extraction.items.length > 0) dataScore += weights.items;
+
+    const normalizedOcr = normalizeOcrConfidence(ocrConfidence);
+    if (normalizedOcr === null) {
+        return clamp(dataScore, 0, 1);
+    }
+
+    const combined = dataScore * 0.8 + normalizedOcr * 0.2;
+    return clamp(combined, 0, 1);
 }
 
 /**
- * Extracts vendor name from receipt lines
- * Usually the first 1-2 lines that aren't addresses, phone numbers, or prices
- * Requires the text to look like a receipt (have amount/total patterns)
+ * Extracts merchant name from receipt lines.
+ * Usually the first 1-2 lines that are not addresses, phone numbers, or prices.
+ * Requires the text to look like a receipt (has amount/total patterns).
  */
-function extractVendor(lines: string[]): string | null {
-    // First check if this looks like a receipt (has price patterns)
+function extractMerchant(lines: string[]): string | null {
     const text = lines.join('\n');
     const hasReceiptPattern = /\$[\d,]+\.?\d*|total|subtotal|tax/i.test(text);
 
@@ -73,7 +141,7 @@ function extractVendor(lines: string[]): string | null {
 }
 
 /**
- * Extracts total amount from receipt text
+ * Extracts total amount from receipt text.
  */
 function extractTotal(text: string): number | null {
     const patterns = [
@@ -85,15 +153,34 @@ function extractTotal(text: string): number | null {
     for (const pattern of patterns) {
         const match = text.match(pattern);
         if (match) {
-            const value = parseFloat(match[1].replace(/,/g, ''));
-            if (!isNaN(value)) return value;
+            const value = parseCurrency(match[1]);
+            if (value !== null) return value;
         }
     }
     return null;
 }
 
 /**
- * Extracts tax amount from receipt text
+ * Extracts subtotal amount from receipt text.
+ */
+function extractSubtotal(text: string): number | null {
+    const patterns = [
+        /(?:subtotal|sub total)[:\s]*\$?\s*([\d,]+\.?\d*)/i,
+        /(?:subtotal)\s+\$?\s*([\d,]+\.\d{2})/i,
+    ];
+
+    for (const pattern of patterns) {
+        const match = text.match(pattern);
+        if (match) {
+            const value = parseCurrency(match[1]);
+            if (value !== null) return value;
+        }
+    }
+    return null;
+}
+
+/**
+ * Extracts tax amount from receipt text.
  */
 function extractTax(text: string): number | null {
     const patterns = [
@@ -104,70 +191,114 @@ function extractTax(text: string): number | null {
     for (const pattern of patterns) {
         const match = text.match(pattern);
         if (match) {
-            const value = parseFloat(match[1].replace(/,/g, ''));
-            if (!isNaN(value)) return value;
+            const value = parseCurrency(match[1]);
+            if (value !== null) return value;
         }
     }
     return null;
 }
 
 /**
- * Extracts date from receipt text
+ * Extracts date from receipt text.
  */
 function extractDate(text: string): string | null {
     const patterns = [
-        // MM/DD/YYYY or MM-DD-YYYY
         /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/,
-        // Month DD, YYYY
         /([A-Za-z]{3,}\s+\d{1,2},?\s+\d{2,4})/,
-        // YYYY-MM-DD
         /(\d{4}-\d{2}-\d{2})/,
     ];
 
     for (const pattern of patterns) {
         const match = text.match(pattern);
         if (match) {
-            try {
-                const parsed = new Date(match[1]);
-                if (!isNaN(parsed.getTime())) {
-                    return parsed.toISOString().split('T')[0];
-                }
-            } catch {
-                continue;
-            }
+            const parsed = normalizeDate(match[1]);
+            if (parsed) return parsed;
         }
     }
     return null;
 }
 
 /**
- * Extracts a description from item lines
- * Looks for common item patterns and summarizes
+ * Extracts item lines from receipt text.
  */
-function extractDescription(lines: string[]): string | null {
-    const itemPatterns = [
-        /^([A-Z][A-Z\s-]+)\s+\$?[\d,]+\.?\d*/i, // ITEM NAME $price
-        /^([A-Z][A-Z\s-]+)\s+-?\s*\$?[\d,]+\.?\d*/i, // ITEM NAME - $price
-    ];
+function extractItems(lines: string[]): ReceiptItem[] {
+    const ignorePattern = /^(subtotal|tax|total|change|cash|credit|debit|balance|amount|tip|vat|gst|rounding|discount)/i;
+    const items: ReceiptItem[] = [];
+    const seen = new Set<string>();
 
-    const items: string[] = [];
+    const quantityPattern = /^(.+?)\s+(\d+(?:\.\d+)?)\s*(?:x|@)\s*\$?([\d,]+\.\d{2})\s+\$?([\d,]+\.\d{2})$/i;
+    const pricePattern = /^(.+?)\s+\$?([\d,]+\.\d{2})$/;
 
     for (const line of lines) {
-        for (const pattern of itemPatterns) {
-            const match = line.match(pattern);
-            if (match && match[1].length > 2) {
-                const item = match[1].trim();
-                // Skip common non-item lines
-                if (!item.match(/^(subtotal|tax|total|change|cash|credit|debit|balance)/i)) {
-                    items.push(item);
+        if (!line || ignorePattern.test(line)) {
+            continue;
+        }
+
+        const quantityMatch = line.match(quantityPattern);
+        if (quantityMatch) {
+            const description = quantityMatch[1].trim();
+            if (description.length > 2 && !ignorePattern.test(description)) {
+                const quantity = parseNumber(quantityMatch[2]);
+                const unitPrice = parseCurrency(quantityMatch[3]);
+                const total = parseCurrency(quantityMatch[4]);
+                const key = `${description}-${total ?? 'na'}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    items.push({ description, quantity, unitPrice, total });
+                }
+            }
+            continue;
+        }
+
+        const priceMatch = line.match(pricePattern);
+        if (priceMatch) {
+            const description = priceMatch[1].trim();
+            if (description.length > 2 && !ignorePattern.test(description)) {
+                const total = parseCurrency(priceMatch[2]);
+                const key = `${description}-${total ?? 'na'}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    items.push({ description, total });
                 }
             }
         }
     }
 
-    if (items.length === 0) return null;
+    return items;
+}
 
-    // Return first few items as description
-    const uniqueItems = [...new Set(items)];
-    return uniqueItems.slice(0, 3).join(', ');
+function parseCurrency(value: string): number | null {
+    const normalized = parseFloat(value.replace(/,/g, ''));
+    return Number.isNaN(normalized) ? null : normalized;
+}
+
+function parseNumber(value: string): number | null {
+    const normalized = parseFloat(value);
+    return Number.isNaN(normalized) ? null : normalized;
+}
+
+function normalizeDate(value: string): string | null {
+    try {
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return null;
+        return parsed.toISOString().split('T')[0];
+    } catch {
+        return null;
+    }
+}
+
+function normalizeOcrConfidence(value?: number | null): number | null {
+    if (value === null || value === undefined || Number.isNaN(value)) {
+        return null;
+    }
+    const normalized = value > 1 ? value / 100 : value;
+    return clamp(normalized, 0, 1);
+}
+
+function clamp(value: number, min: number, max: number): number {
+    return Math.min(Math.max(value, min), max);
+}
+
+function roundCurrency(value: number): number {
+    return Number(value.toFixed(2));
 }

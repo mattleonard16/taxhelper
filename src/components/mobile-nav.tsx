@@ -8,12 +8,14 @@ import {
     Receipt,
     RefreshCw,
     Lightbulb,
+    BadgeDollarSign,
 } from "lucide-react";
 
 const navItems = [
     { href: "/dashboard", label: "Home", icon: LayoutDashboard },
     { href: "/transactions", label: "Trans", icon: Receipt },
     { href: "/insights", label: "Insights", icon: Lightbulb },
+    { href: "/deductions", label: "Deduct", icon: BadgeDollarSign },
     { href: "/recurring", label: "Recur", icon: RefreshCw },
 ];
 

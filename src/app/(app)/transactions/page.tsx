@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -27,6 +28,14 @@ import { getDateRanges } from "@/lib/format";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 
+function parseIds(value: string): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+}
+
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
@@ -44,6 +53,21 @@ export default function TransactionsPage() {
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
   const [page, setPage] = useState(1);
+  const searchParams = useSearchParams();
+  const idsParam = searchParams?.get("ids") || "";
+  const [idsFilter, setIdsFilter] = useState<string[]>(() => parseIds(idsParam));
+
+  useEffect(() => {
+    if (!idsParam) {
+      setIdsFilter([]);
+      return;
+    }
+
+    const ids = parseIds(idsParam);
+
+    setIdsFilter(ids);
+    setPage(1);
+  }, [idsParam]);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -78,6 +102,7 @@ export default function TransactionsPage() {
       if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
       if (debouncedMinAmount) params.set("minAmount", debouncedMinAmount);
       if (debouncedMaxAmount) params.set("maxAmount", debouncedMaxAmount);
+      if (idsFilter.length > 0) params.set("ids", idsFilter.join(","));
 
       const response = await fetch(`/api/transactions?${params}`);
       if (response.ok) {
@@ -90,7 +115,7 @@ export default function TransactionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, fromDate, toDate, typeFilter, debouncedSearch, debouncedMinAmount, debouncedMaxAmount]);
+  }, [page, fromDate, toDate, typeFilter, debouncedSearch, debouncedMinAmount, debouncedMaxAmount, idsFilter]);
 
   useEffect(() => {
     fetchTransactions();
@@ -143,9 +168,11 @@ export default function TransactionsPage() {
     setMinAmount("");
     setMaxAmount("");
     setPage(1);
+    setIdsFilter([]);
   };
 
-  const hasActiveFilters = fromDate || toDate || typeFilter !== "all" || search || minAmount || maxAmount;
+  const hasActiveFilters =
+    fromDate || toDate || typeFilter !== "all" || search || minAmount || maxAmount || idsFilter.length > 0;
 
   const handleExport = async (format: "csv" | "json") => {
     try {
@@ -442,4 +469,3 @@ export default function TransactionsPage() {
     </div>
   );
 }
-
