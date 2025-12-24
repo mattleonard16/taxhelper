@@ -8,6 +8,7 @@ import { TaxTimeseriesChart } from "@/components/dashboard/tax-timeseries-chart"
 import { TaxByTypeChart } from "@/components/dashboard/tax-by-type-chart";
 import { TopMerchants } from "@/components/dashboard/top-merchants";
 import { DailyTaxInsights } from "@/components/dashboard/daily-tax-insights";
+import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
 import { TransactionForm } from "@/components/transactions/transaction-form";
 import { TransactionList } from "@/components/transactions/transaction-list";
 import { getDateRanges } from "@/lib/format";
@@ -145,6 +146,15 @@ export default function DashboardPage() {
         <Plus className="h-6 w-6" />
         <span className="sr-only">Add Transaction</span>
       </Button>
+
+      {/* Onboarding Checklist */}
+      <OnboardingChecklist
+        onAddTransaction={() => {
+          setEditingTransaction(null);
+          setFormOpen(true);
+        }}
+        onRefreshData={fetchData}
+      />
 
       {summary && (
         <>
