@@ -15,6 +15,7 @@ import {
   Sparkles,
   X,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { OnboardingStatus } from "@/app/api/onboarding/route";
@@ -40,6 +41,7 @@ export function OnboardingChecklist({
   const [status, setStatus] = useState<OnboardingStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingSampleData, setLoadingSampleData] = useState(false);
+  const [clearingSampleData, setClearingSampleData] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
   const fetchStatus = useCallback(async () => {
@@ -98,6 +100,31 @@ export function OnboardingChecklist({
       toast.error("Failed to load sample data");
     } finally {
       setLoadingSampleData(false);
+    }
+  };
+
+  const handleClearSampleData = async () => {
+    setClearingSampleData(true);
+    try {
+      const response = await fetch("/api/sample-data", {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to clear sample data");
+      }
+
+      const data = await response.json();
+      toast.success(data.message);
+
+      // Refresh dashboard data and onboarding status
+      await fetchStatus();
+      onRefreshData();
+    } catch (error) {
+      console.error("Error clearing sample data:", error);
+      toast.error("Failed to clear sample data");
+    } finally {
+      setClearingSampleData(false);
     }
   };
 
@@ -257,32 +284,58 @@ export function OnboardingChecklist({
           })}
         </ul>
 
-        {/* Sample data button */}
-        {!status?.sampleDataLoaded && (
-          <div className="border-t pt-4">
-            <Button
-              onClick={handleLoadSampleData}
-              disabled={loadingSampleData}
-              variant="outline"
-              className="w-full bg-gradient-to-r from-primary/10 to-accent/10 hover:from-primary/20 hover:to-accent/20"
-            >
-              {loadingSampleData ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading sample data...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Load sample data to explore
-                </>
-              )}
-            </Button>
-            <p className="mt-2 text-center text-xs text-muted-foreground">
-              Creates demo transactions so you can see charts and insights
-            </p>
-          </div>
-        )}
+        {/* Sample data buttons */}
+        <div className="border-t pt-4">
+          {!status?.sampleDataLoaded ? (
+            <>
+              <Button
+                onClick={handleLoadSampleData}
+                disabled={loadingSampleData}
+                variant="outline"
+                className="w-full bg-gradient-to-r from-primary/10 to-accent/10 hover:from-primary/20 hover:to-accent/20"
+              >
+                {loadingSampleData ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading sample data...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Load sample data to explore
+                  </>
+                )}
+              </Button>
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                Creates demo transactions so you can see charts and insights
+              </p>
+            </>
+          ) : (
+            <>
+              <Button
+                onClick={handleClearSampleData}
+                disabled={clearingSampleData}
+                variant="outline"
+                className="w-full border-destructive/30 text-destructive hover:bg-destructive/10"
+              >
+                {clearingSampleData ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Clearing sample data...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Clear sample data
+                  </>
+                )}
+              </Button>
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                Remove demo transactions when you&apos;re ready
+              </p>
+            </>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

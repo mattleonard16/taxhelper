@@ -10,6 +10,7 @@ vi.mock("@/lib/prisma", () => ({
     transaction: {
       count: vi.fn(),
       createMany: vi.fn(),
+      deleteMany: vi.fn(),
     },
   },
 }));
@@ -41,15 +42,17 @@ vi.mock("@/lib/insights", () => ({
 }));
 
 let POST: typeof import("@/app/api/sample-data/route").POST;
+let DELETE: typeof import("@/app/api/sample-data/route").DELETE;
 let prismaTransaction: {
   count: ReturnType<typeof vi.fn>;
   createMany: ReturnType<typeof vi.fn>;
+  deleteMany: ReturnType<typeof vi.fn>;
 };
 let getAuthUserMock: ReturnType<typeof vi.fn>;
 
 describe("sample-data API route", () => {
   beforeAll(async () => {
-    ({ POST } = await import("@/app/api/sample-data/route"));
+    ({ POST, DELETE } = await import("@/app/api/sample-data/route"));
 
     const prismaModule = await import("@/lib/prisma");
     prismaTransaction = (prismaModule.prisma as unknown as { transaction: unknown })
@@ -138,5 +141,71 @@ describe("sample-data API route", () => {
 
     // Should NOT call createMany
     expect(prismaTransaction.createMany).not.toHaveBeenCalled();
+  });
+
+  it("DELETE /api/sample-data returns 401 without session", async () => {
+    getAuthUserMock.mockResolvedValue(null);
+
+    const request = new NextRequest("http://localhost/api/sample-data", {
+      method: "DELETE",
+    });
+    const response = await DELETE(request);
+
+    expect(response.status).toBe(401);
+    const json = await response.json();
+    expect(json).toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  it("DELETE /api/sample-data deletes demo transactions and returns count", async () => {
+    const user: AuthenticatedUser = { id: "user_1" };
+    getAuthUserMock.mockResolvedValue(user);
+
+    // Mock successful deletion of 15 transactions
+    prismaTransaction.deleteMany.mockResolvedValue({ count: 15 });
+
+    const request = new NextRequest("http://localhost/api/sample-data", {
+      method: "DELETE",
+    });
+    const response = await DELETE(request);
+
+    expect(response.status).toBe(200);
+    const json = await response.json();
+
+    expect(json).toMatchObject({
+      success: true,
+      message: "Removed 15 sample transactions",
+      deleted: 15,
+    });
+
+    // Verify deleteMany was called with correct filter
+    expect(prismaTransaction.deleteMany).toHaveBeenCalledTimes(1);
+    expect(prismaTransaction.deleteMany).toHaveBeenCalledWith({
+      where: {
+        userId: user.id,
+        description: { startsWith: DEMO_PREFIX },
+      },
+    });
+  });
+
+  it("DELETE /api/sample-data returns 0 if no demo data exists", async () => {
+    const user: AuthenticatedUser = { id: "user_1" };
+    getAuthUserMock.mockResolvedValue(user);
+
+    // No demo transactions to delete
+    prismaTransaction.deleteMany.mockResolvedValue({ count: 0 });
+
+    const request = new NextRequest("http://localhost/api/sample-data", {
+      method: "DELETE",
+    });
+    const response = await DELETE(request);
+
+    expect(response.status).toBe(200);
+    const json = await response.json();
+
+    expect(json).toMatchObject({
+      success: true,
+      message: "No sample data to remove",
+      deleted: 0,
+    });
   });
 });

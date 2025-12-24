@@ -104,3 +104,59 @@ export async function POST(request: NextRequest) {
     return attachRequestId(ApiErrors.internal(), requestId);
   }
 }
+
+/**
+ * DELETE /api/sample-data
+ * Removes all demo transactions for the current user
+ */
+export async function DELETE(request: NextRequest) {
+  const requestId = getRequestId(request);
+  let userId: string | undefined;
+
+  try {
+    const user = await getAuthUser();
+    if (!user) {
+      return attachRequestId(ApiErrors.unauthorized(), requestId);
+    }
+    userId = user.id;
+
+    // Rate limiting for mutations
+    const rateLimitResult = await checkRateLimit(user.id, RateLimitConfig.mutation);
+    if (!rateLimitResult.success) {
+      return attachRequestId(rateLimitedResponse(rateLimitResult), requestId);
+    }
+
+    // Delete all demo transactions for this user
+    const deleted = await prisma.transaction.deleteMany({
+      where: {
+        userId: user.id,
+        description: { startsWith: DEMO_PREFIX },
+      },
+    });
+
+    const response = NextResponse.json({
+      success: true,
+      message: deleted.count > 0
+        ? `Removed ${deleted.count} sample transactions`
+        : "No sample data to remove",
+      deleted: deleted.count,
+    });
+
+    rateLimitResult.headers.forEach((value, key) => {
+      response.headers.set(key, value);
+    });
+    response.headers.set("X-Request-Id", requestId);
+
+    return response;
+  } catch (error) {
+    logger.error("Error clearing sample data", {
+      requestId,
+      userId,
+      path: request.nextUrl.pathname,
+      method: request.method,
+      error,
+    });
+    return attachRequestId(ApiErrors.internal(), requestId);
+  }
+}
+
