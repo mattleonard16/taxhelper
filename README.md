@@ -90,13 +90,23 @@ Visit [http://localhost:3000](http://localhost:3000) to see the app.
 
 ### Development Login
 
-For local testing, use the **Development** sign-in option:
-- **Email**: Any email (e.g., `test@example.com`)
-- **Password**: `dev`
+For local testing (development only):
+- **Email**: `dev@taxhelper.app`
+- **Password**: `devmode123`
 
-This creates a local user automatically and only works in development mode.
+This requires the following environment variables:
+```env
+ENABLE_DEV_LOGIN=true
+DEV_LOGIN_EMAIL="dev@taxhelper.app"
+DEV_LOGIN_PASSWORD="devmode123"
+NEXT_PUBLIC_ENABLE_DEV_LOGIN=true
+NEXT_PUBLIC_DEV_LOGIN_EMAIL="dev@taxhelper.app"
+NEXT_PUBLIC_DEV_LOGIN_PASSWORD="devmode123"
+```
 
-### Google OAuth Setup (TODO)
+When enabled, a "Dev Login" button appears on the sign-in page. The dev user is auto-created on first login and dev login is disabled in production.
+
+### Google OAuth Setup
 
 To enable Google Sign-In for production:
 

@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import EmailProvider from "next-auth/providers/email";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcrypt";
+import { checkRateLimit, RateLimitConfig } from "@/lib/rate-limit";
 import { prisma } from "./prisma";
 
 export const authOptions: NextAuthOptions = {
@@ -21,10 +22,66 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        const email = credentials.email.trim();
+        const normalizedEmail = email.toLowerCase();
+
+        // Skip rate limiting in test environments
+        if (process.env.NODE_ENV !== "test" && process.env.SKIP_AUTH_RATE_LIMIT !== "true") {
+          const rateLimit = await checkRateLimit(
+            `auth:${normalizedEmail}`,
+            RateLimitConfig.auth
+          );
+          if (!rateLimit.success) {
+            return null;
+          }
+        }
+
+        // Dev login - read env vars at runtime for proper E2E testing
+        const devLoginEnabled = process.env.ENABLE_DEV_LOGIN === "true";
+        const devLoginAllowed = devLoginEnabled && process.env.NODE_ENV !== "production";
+        const devLoginEmail = devLoginAllowed
+          ? process.env.DEV_LOGIN_EMAIL || process.env.NEXT_PUBLIC_DEV_LOGIN_EMAIL
+          : undefined;
+        const devLoginPassword = devLoginAllowed
+          ? process.env.DEV_LOGIN_PASSWORD || process.env.NEXT_PUBLIC_DEV_LOGIN_PASSWORD
+          : undefined;
+        const devLoginConfigured = Boolean(devLoginEmail && devLoginPassword);
+        const isDevEmail =
+          devLoginConfigured &&
+          normalizedEmail === devLoginEmail?.toLowerCase();
+        const lookupEmail = isDevEmail && devLoginEmail ? devLoginEmail : email;
+
         // Find user by email
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+        let user = await prisma.user.findUnique({
+          where: { email: lookupEmail },
         });
+
+        if (
+          isDevEmail &&
+          devLoginEmail &&
+          devLoginPassword &&
+          credentials.password === devLoginPassword
+        ) {
+          const devPasswordHash = await bcrypt.hash(devLoginPassword, 10);
+          const devUser = await prisma.user.upsert({
+            where: { email: devLoginEmail },
+            update: {
+              name: "Dev User",
+              password: devPasswordHash,
+            },
+            create: {
+              email: devLoginEmail,
+              name: "Dev User",
+              password: devPasswordHash,
+            },
+          });
+
+          return {
+            id: devUser.id,
+            email: devUser.email,
+            name: devUser.name,
+          };
+        }
 
         if (!user || !user.password) {
           // User doesn't exist or has no password set

@@ -97,6 +97,7 @@ function VirtualizedTransactionTable({
   onDelete,
 }: TransactionListProps) {
   const parentRef = useRef<HTMLDivElement | null>(null);
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual hook is required here.
   const rowVirtualizer = useVirtualizer({
     count: transactions.length,
     getScrollElement: () => parentRef.current,

@@ -6,14 +6,12 @@ import {
   Wallet,
   Sparkles,
   ScanLine,
-  ChevronRight,
   Receipt,
   PiggyBank,
   ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 const TABS = [
@@ -222,7 +220,16 @@ function TrackingDemo() {
   );
 }
 
-function StatCard({ label, value, subtext, trend, highlight, delay }: any) {
+type StatCardProps = {
+  label: string;
+  value: string;
+  subtext: string;
+  trend?: "up" | "down";
+  highlight?: boolean;
+  delay?: number;
+};
+
+function StatCard({ label, value, subtext, trend, highlight, delay }: StatCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -394,4 +401,3 @@ function ScannerDemo() {
     </motion.div>
   );
 }
-

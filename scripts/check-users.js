@@ -1,6 +1,7 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
 async function main() {
+  const { PrismaClient } = await import("@prisma/client");
+  const prisma = new PrismaClient();
+
   try {
     const users = await prisma.user.findMany({
       select: {
@@ -10,11 +11,11 @@ async function main() {
       }
     });
     console.log(JSON.stringify(users, null, 2));
-  } catch (e) {
-    console.error(e);
   } finally {
     await prisma.$disconnect();
   }
 }
-main();
-
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

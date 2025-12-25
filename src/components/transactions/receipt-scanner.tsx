@@ -125,7 +125,7 @@ export function ReceiptScanner({ open, onOpenChange, onExtract, transactionType 
             setScanning(false);
             setProgress(0);
         }
-    }, [onExtract, onOpenChange]);
+    }, [onExtract, onOpenChange, transactionType]);
 
     const handleClose = useCallback(() => {
         if (!scanning) {

@@ -14,25 +14,55 @@ import { Suspense } from "react";
 // Check for optional auth providers
 const hasGoogle = process.env.NEXT_PUBLIC_HAS_GOOGLE_AUTH === "true";
 const hasEmail = process.env.NEXT_PUBLIC_HAS_EMAIL_AUTH === "true";
+const devLoginEmail = process.env.NEXT_PUBLIC_DEV_LOGIN_EMAIL || "";
+const devLoginPassword = process.env.NEXT_PUBLIC_DEV_LOGIN_PASSWORD || "";
+const hasDevLogin =
+  process.env.NODE_ENV !== "production" &&
+  process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN === "true" &&
+  devLoginEmail.length > 0 &&
+  devLoginPassword.length > 0;
 
 function SignInForm() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "true";
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const rawCallbackUrl = searchParams.get("callbackUrl");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [magicEmail, setMagicEmail] = useState("");
+  const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [emailSent, setEmailSent] = useState(false);
 
+  useEffect(() => {
+    const value = rawCallbackUrl;
+    if (!value) {
+      setCallbackUrl("/dashboard");
+      return;
+    }
+    if (value.startsWith("/") && !value.startsWith("//")) {
+      setCallbackUrl(value);
+      return;
+    }
+    try {
+      const parsed = new URL(value);
+      if (parsed.origin === window.location.origin) {
+        setCallbackUrl(`${parsed.pathname}${parsed.search}${parsed.hash}`);
+        return;
+      }
+    } catch {
+      // Ignore invalid callback URLs
+    }
+    setCallbackUrl("/dashboard");
+  }, [rawCallbackUrl]);
+
   // Redirect if already authenticated
   useEffect(() => {
-    if (status === "authenticated") {
-      router.push(callbackUrl);
+    if (status === "authenticated" && callbackUrl) {
+      router.push(callbackUrl || "/dashboard");
     }
   }, [status, router, callbackUrl]);
 
@@ -48,13 +78,13 @@ function SignInForm() {
         redirect: false,
       });
 
-      if (result?.error) {
+      if (!result || result.error || result.ok === false) {
         setError("Invalid email or password");
         setLoading(false);
         return;
       }
 
-      router.push(callbackUrl);
+      router.push(callbackUrl || "/dashboard");
     } catch {
       setError("An error occurred. Please try again.");
       setLoading(false);
@@ -66,7 +96,7 @@ function SignInForm() {
     setLoading(true);
 
     try {
-      await signIn("email", { email: magicEmail, callbackUrl });
+      await signIn("email", { email: magicEmail, callbackUrl: callbackUrl || "/dashboard" });
       setEmailSent(true);
     } catch (error) {
       console.error("Sign in error:", error);
@@ -138,6 +168,47 @@ function SignInForm() {
           </Link>
         </p>
 
+        {/* Dev Login Button */}
+        {hasDevLogin && (
+          <>
+            <div className="relative">
+              <Separator />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+                dev mode
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              className="w-full h-11 border-dashed border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
+              onClick={async () => {
+                setEmail(devLoginEmail);
+                setPassword(devLoginPassword);
+                setLoading(true);
+                setError("");
+                try {
+                  const result = await signIn("credentials", {
+                    email: devLoginEmail,
+                    password: devLoginPassword,
+                    redirect: false,
+                  });
+                  if (!result || result.error || result.ok === false) {
+                    setError("Dev login failed. Check ENABLE_DEV_LOGIN and DEV_LOGIN_*.");
+                    setLoading(false);
+                    return;
+                  }
+                  router.push(callbackUrl || "/dashboard");
+                } catch {
+                  setError("Dev login failed");
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+            >
+              {loading ? "Signing in..." : "Dev Login"}
+            </Button>
+          </>
+        )}
+
         {/* Optional: Google OAuth */}
         {hasGoogle && (
           <>
@@ -150,7 +221,7 @@ function SignInForm() {
             <Button
               variant="outline"
               className="w-full h-11"
-              onClick={() => signIn("google", { callbackUrl })}
+              onClick={() => signIn("google", { callbackUrl: callbackUrl || "/dashboard" })}
             >
               <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
                 <path

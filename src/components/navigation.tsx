@@ -63,7 +63,11 @@ export function Navigation() {
         <div className="flex items-center gap-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-11 w-11 rounded-full md:h-9 md:w-9">
+              <Button
+                variant="ghost"
+                className="relative h-11 w-11 rounded-full md:h-9 md:w-9"
+                data-testid="user-menu-trigger"
+              >
                 <Avatar className="h-11 w-11 md:h-9 md:w-9">
                   <AvatarImage src={session?.user?.image || undefined} />
                   <AvatarFallback className="bg-primary text-primary-foreground">
