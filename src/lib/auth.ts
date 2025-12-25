@@ -52,7 +52,7 @@ export const authOptions: NextAuthOptions = {
         const lookupEmail = isDevEmail && devLoginEmail ? devLoginEmail : email;
 
         // Find user by email
-        let user = await prisma.user.findUnique({
+        const user = await prisma.user.findUnique({
           where: { email: lookupEmail },
         });
 
