@@ -90,6 +90,12 @@ model Transaction {
   currency    String          @default("USD")
   receiptPath String?         // Path to stored receipt file (invoice-organizer format)
   receiptName String?         // Original filename of uploaded receipt
+  
+  // Categorization (synced from receipt or manually set)
+  category      String?       // e.g., "Meals & Entertainment", "Travel", "Office Supplies"
+  categoryCode  String?       // e.g., "MEALS", "TRAVEL", "OFFICE"
+  isDeductible  Boolean       @default(false)
+  
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
@@ -97,9 +103,13 @@ model Transaction {
   @@index([userId])
   @@index([date])
   @@index([type])
+  @@index([isDeductible])
   // Composite indexes for common query patterns
   @@index([userId, date])           // For date range queries
   @@index([userId, type, date])     // For filtered type queries
+  @@index([userId, isDeductible])   // For deductible filtering
+  @@index([userId, merchant])       // For merchant search
+  @@index([userId, categoryCode])   // For category filtering
 }
 
 model TaxTemplate {
@@ -224,8 +234,8 @@ model ReceiptJob {
   isDeductible        Boolean           @default(false)
   extractionConfidence Float?           // 0-1 confidence score
   
-  // Linked transaction (if auto-created or matched)
-  transactionId String?
+  // Linked transaction (created on confirm)
+  transactionId String?           @unique  // Uniqueness prevents duplicate transactions on concurrent confirms
   
   // Processing metadata
   attempts      Int               @default(0)
@@ -235,10 +245,32 @@ model ReceiptJob {
   processingStartedAt DateTime?
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
+  discardedAt   DateTime?         // Soft-delete timestamp (cleanup async)
+  
+  // User corrections for fine-tuning
+  corrections   ReceiptCorrection[]
   
   @@index([userId])
   @@index([status])
   @@index([userId, status])
+  @@index([userId, status, createdAt])  // Inbox list query
+}
+
+// Track user corrections to extracted fields for LLM fine-tuning
+model ReceiptCorrection {
+  id              String      @id @default(cuid())
+  receiptJobId    String
+  receiptJob      ReceiptJob  @relation(fields: [receiptJobId], references: [id], onDelete: Cascade)
+  userId          String      // Denormalized for analytics
+  
+  fieldName       String      // "merchant", "totalAmount", "date", "taxAmount", "category"
+  originalValue   String?
+  correctedValue  String
+  
+  createdAt       DateTime    @default(now())
+  
+  @@index([receiptJobId])
+  @@index([userId, createdAt])
 }
 
 model ReceiptExtractionCache {
@@ -267,6 +299,8 @@ model LlmDailyUsage {
 enum ReceiptJobStatus {
   QUEUED
   PROCESSING
-  COMPLETED
+  NEEDS_REVIEW  // Extraction done, low confidence or missing fields - user must review
+  COMPLETED     // Extraction done, high confidence - awaiting user confirmation
+  CONFIRMED     // User confirmed, transaction created and linked - immutable
   FAILED
 }
