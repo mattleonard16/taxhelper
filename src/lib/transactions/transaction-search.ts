@@ -4,7 +4,7 @@ import type { Prisma } from "@prisma/client";
 
 type TransactionSearchFilters = Pick<
   TransactionQueryInput,
-  "from" | "to" | "type" | "search" | "minAmount" | "maxAmount"
+  "from" | "to" | "type" | "search" | "minAmount" | "maxAmount" | "category" | "isDeductible"
 >;
 
 export const buildTransactionDateRange = (
@@ -46,6 +46,14 @@ export const buildTransactionSearchWhere = (
       { merchant: { contains: filters.search, mode: "insensitive" } },
       { description: { contains: filters.search, mode: "insensitive" } },
     ];
+  }
+
+  if (filters.category) {
+    where.categoryCode = filters.category;
+  }
+
+  if (filters.isDeductible !== undefined) {
+    where.isDeductible = filters.isDeductible;
   }
 
   return where;

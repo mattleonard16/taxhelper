@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,9 @@ import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { getDateRanges } from "@/lib/format";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useDebouncedValue } from "@/hooks/use-debounce";
+import { usePersistedFilters } from "@/hooks/use-persisted-filters";
+import { FilterChips } from "@/components/transactions/filter-chips";
+import { BulkActionsBar } from "@/components/transactions/bulk-actions-bar";
 
 function parseIds(value: string): string[] {
   if (!value) return [];
@@ -44,18 +47,15 @@ export default function TransactionsPage() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Filters
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [search, setSearch] = useState("");
-  const [minAmount, setMinAmount] = useState("");
-  const [maxAmount, setMaxAmount] = useState("");
+  // Persisted filters
+  const { filters, updateFilter, clearFilters, hasActiveFilters, loaded } = usePersistedFilters();
   const [page, setPage] = useState(1);
   const searchParams = useSearchParams();
   const idsParam = searchParams?.get("ids") || "";
   const [idsFilter, setIdsFilter] = useState<string[]>(() => parseIds(idsParam));
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!idsParam) {
@@ -77,31 +77,39 @@ export default function TransactionsPage() {
         setFormOpen(true);
       }
     },
+    "/": () => {
+      searchInputRef.current?.focus();
+    },
     Escape: () => {
       if (deleteDialogOpen) {
         setDeleteDialogOpen(false);
       } else if (formOpen) {
         setFormOpen(false);
         setEditingTransaction(null);
+      } else if (document.activeElement === searchInputRef.current) {
+        searchInputRef.current?.blur();
       }
     },
   });
 
   // Debounce search and amount filters to reduce API calls
-  const debouncedSearch = useDebouncedValue(search, 300);
-  const debouncedMinAmount = useDebouncedValue(minAmount, 300);
-  const debouncedMaxAmount = useDebouncedValue(maxAmount, 300);
+  const debouncedSearch = useDebouncedValue(filters.search, 300);
+  const debouncedMinAmount = useDebouncedValue(filters.minAmount, 300);
+  const debouncedMaxAmount = useDebouncedValue(filters.maxAmount, 300);
 
   const fetchTransactions = useCallback(async () => {
+    if (!loaded) return; // Wait for filters to load from localStorage
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: page.toString(), limit: "20" });
-      if (fromDate) params.set("from", fromDate);
-      if (toDate) params.set("to", toDate);
-      if (typeFilter !== "all") params.set("type", typeFilter);
+      if (filters.fromDate) params.set("from", filters.fromDate);
+      if (filters.toDate) params.set("to", filters.toDate);
+      if (filters.typeFilter !== "all") params.set("type", filters.typeFilter);
       if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim());
       if (debouncedMinAmount) params.set("minAmount", debouncedMinAmount);
       if (debouncedMaxAmount) params.set("maxAmount", debouncedMaxAmount);
+      if (filters.category !== "all") params.set("category", filters.category);
+      if (filters.isDeductible !== "all") params.set("isDeductible", filters.isDeductible);
       if (idsFilter.length > 0) params.set("ids", idsFilter.join(","));
 
       const response = await fetch(`/api/transactions?${params}`);
@@ -115,7 +123,7 @@ export default function TransactionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, fromDate, toDate, typeFilter, debouncedSearch, debouncedMinAmount, debouncedMaxAmount, idsFilter]);
+  }, [page, filters.fromDate, filters.toDate, filters.typeFilter, filters.category, filters.isDeductible, debouncedSearch, debouncedMinAmount, debouncedMaxAmount, idsFilter, loaded]);
 
   useEffect(() => {
     fetchTransactions();
@@ -160,26 +168,54 @@ export default function TransactionsPage() {
     }
   };
 
-  const clearFilters = () => {
-    setFromDate("");
-    setToDate("");
-    setTypeFilter("all");
-    setSearch("");
-    setMinAmount("");
-    setMaxAmount("");
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.size === transactions.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(transactions.map((t) => t.id)));
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkActionComplete = () => {
+    setSelectedIds(new Set());
+    fetchTransactions();
+  };
+
+  const handleClearFilters = () => {
+    clearFilters();
     setPage(1);
     setIdsFilter([]);
   };
 
-  const hasActiveFilters =
-    fromDate || toDate || typeFilter !== "all" || search || minAmount || maxAmount || idsFilter.length > 0;
+  const handleRemoveFilter = <K extends keyof typeof filters>(key: K, defaultValue: typeof filters[K]) => {
+    updateFilter(key, defaultValue);
+    setPage(1);
+  };
+
+  const showClearButton = hasActiveFilters || idsFilter.length > 0;
 
   const handleExport = async (format: "csv" | "json") => {
     try {
       const params = new URLSearchParams({ format });
-      if (fromDate) params.set("from", fromDate);
-      if (toDate) params.set("to", toDate);
-      if (typeFilter !== "all") params.set("type", typeFilter);
+      if (filters.fromDate) params.set("from", filters.fromDate);
+      if (filters.toDate) params.set("to", filters.toDate);
+      if (filters.typeFilter !== "all") params.set("type", filters.typeFilter);
 
       const response = await fetch(`/api/export?${params}`);
       if (!response.ok) {
@@ -298,16 +334,20 @@ export default function TransactionsPage() {
             />
           </svg>
           <Input
+            ref={searchInputRef}
             type="text"
-            placeholder="Search by merchant or description..."
-            value={search}
+            placeholder="Search by merchant or description... (press / to focus)"
+            value={filters.search}
             onChange={(e) => {
-              setSearch(e.target.value);
+              updateFilter("search", e.target.value);
               setPage(1);
             }}
             className="pl-10"
           />
         </div>
+
+        {/* Filter chips */}
+        <FilterChips filters={filters} onRemove={handleRemoveFilter} />
 
         {/* Date range presets */}
         <div className="flex flex-wrap gap-2">
@@ -315,11 +355,11 @@ export default function TransactionsPage() {
           {Object.entries(getDateRanges()).map(([key, range]) => (
             <Button
               key={key}
-              variant={fromDate === range.from && toDate === range.to ? "secondary" : "outline"}
+              variant={filters.fromDate === range.from && filters.toDate === range.to ? "secondary" : "outline"}
               size="sm"
               onClick={() => {
-                setFromDate(range.from);
-                setToDate(range.to);
+                updateFilter("fromDate", range.from);
+                updateFilter("toDate", range.to);
                 setPage(1);
               }}
             >
@@ -334,9 +374,9 @@ export default function TransactionsPage() {
             <label className="text-sm font-medium text-muted-foreground">From</label>
             <Input
               type="date"
-              value={fromDate}
+              value={filters.fromDate}
               onChange={(e) => {
-                setFromDate(e.target.value);
+                updateFilter("fromDate", e.target.value);
                 setPage(1);
               }}
               className="w-40"
@@ -346,9 +386,9 @@ export default function TransactionsPage() {
             <label className="text-sm font-medium text-muted-foreground">To</label>
             <Input
               type="date"
-              value={toDate}
+              value={filters.toDate}
               onChange={(e) => {
-                setToDate(e.target.value);
+                updateFilter("toDate", e.target.value);
                 setPage(1);
               }}
               className="w-40"
@@ -357,9 +397,9 @@ export default function TransactionsPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-muted-foreground">Type</label>
             <Select
-              value={typeFilter}
+              value={filters.typeFilter}
               onValueChange={(value) => {
-                setTypeFilter(value);
+                updateFilter("typeFilter", value);
                 setPage(1);
               }}
             >
@@ -383,9 +423,9 @@ export default function TransactionsPage() {
                 min="0"
                 step="0.01"
                 placeholder="0.00"
-                value={minAmount}
+                value={filters.minAmount}
                 onChange={(e) => {
-                  setMinAmount(e.target.value);
+                  updateFilter("minAmount", e.target.value);
                   setPage(1);
                 }}
                 className="w-28 pl-7"
@@ -401,22 +441,71 @@ export default function TransactionsPage() {
                 min="0"
                 step="0.01"
                 placeholder="0.00"
-                value={maxAmount}
+                value={filters.maxAmount}
                 onChange={(e) => {
-                  setMaxAmount(e.target.value);
+                  updateFilter("maxAmount", e.target.value);
                   setPage(1);
                 }}
                 className="w-28 pl-7"
               />
             </div>
           </div>
-          {hasActiveFilters && (
-            <Button variant="ghost" onClick={clearFilters}>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-muted-foreground">Category</label>
+            <Select
+              value={filters.category}
+              onValueChange={(value) => {
+                updateFilter("category", value);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="MEALS">Meals</SelectItem>
+                <SelectItem value="TRAVEL">Travel</SelectItem>
+                <SelectItem value="OFFICE">Office</SelectItem>
+                <SelectItem value="UTILITIES">Utilities</SelectItem>
+                <SelectItem value="SOFTWARE">Software</SelectItem>
+                <SelectItem value="PROFESSIONAL">Professional</SelectItem>
+                <SelectItem value="OTHER">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-muted-foreground">Deductible</label>
+            <Select
+              value={filters.isDeductible}
+              onValueChange={(value) => {
+                updateFilter("isDeductible", value);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="true">Yes</SelectItem>
+                <SelectItem value="false">No</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {showClearButton && (
+            <Button variant="ghost" onClick={handleClearFilters}>
               Clear filters
             </Button>
           )}
         </div>
       </div>
+
+      <BulkActionsBar
+        selectedIds={Array.from(selectedIds)}
+        onClearSelection={handleClearSelection}
+        onActionComplete={handleBulkActionComplete}
+      />
 
       {loading ? (
         <TransactionListSkeleton rows={10} />
@@ -426,6 +515,9 @@ export default function TransactionsPage() {
             transactions={transactions}
             onEdit={handleEdit}
             onDelete={handleDeleteClick}
+            selectedIds={selectedIds}
+            onToggleSelect={handleToggleSelect}
+            onSelectAll={handleSelectAll}
           />
 
           {pagination && pagination.pages > 1 && (

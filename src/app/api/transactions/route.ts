@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       ), requestId);
     }
 
-    const { ids, from, to, type, search, minAmount, maxAmount, page, limit } = parseResult.data;
+    const { ids, from, to, type, search, minAmount, maxAmount, category, isDeductible, page, limit } = parseResult.data;
 
     // Fetch by explicit IDs (used by Insights drill-down)
     if (ids && ids.length > 0) {
@@ -86,6 +86,8 @@ export async function GET(request: NextRequest) {
       search,
       minAmount,
       maxAmount,
+      category,
+      isDeductible,
     });
 
     const [transactions, total] = await Promise.all([

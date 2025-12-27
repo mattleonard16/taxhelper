@@ -22,6 +22,9 @@ interface TransactionListProps {
   transactions: Transaction[];
   onEdit: (transaction: Transaction) => void;
   onDelete: (id: string) => void;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
+  onSelectAll?: () => void;
 }
 
 const VIRTUALIZATION_THRESHOLD = 50;
@@ -236,7 +239,15 @@ export const TransactionList = React.memo(function TransactionList({
   transactions,
   onEdit,
   onDelete,
+  selectedIds,
+  onToggleSelect,
+  onSelectAll,
 }: TransactionListProps) {
+  const selectionEnabled = selectedIds !== undefined && onToggleSelect !== undefined;
+  const allSelected = selectionEnabled && transactions.length > 0 && 
+    transactions.every((t) => selectedIds?.has(t.id));
+  const someSelected = selectionEnabled && transactions.some((t) => selectedIds?.has(t.id));
+
   if (transactions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card/30 py-16">
@@ -277,10 +288,25 @@ export const TransactionList = React.memo(function TransactionList({
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card/50 shadow-lg backdrop-blur">
+    <div className="rounded-xl border border-border bg-card/50 shadow-lg backdrop-blur" data-testid="transactions-list">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
+            {selectionEnabled && (
+              <TableHead className="w-[40px]">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = someSelected && !allSelected;
+                  }}
+                  onChange={onSelectAll}
+                  className="h-4 w-4 rounded border-gray-300"
+                  aria-label="Select all"
+                  data-testid="select-all-checkbox"
+                />
+              </TableHead>
+            )}
             <TableHead>Date</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Merchant</TableHead>
@@ -293,7 +319,23 @@ export const TransactionList = React.memo(function TransactionList({
         </TableHeader>
         <TableBody>
           {transactions.map((transaction) => (
-            <TableRow key={transaction.id} className="group">
+            <TableRow 
+              key={transaction.id} 
+              className={cn("group", selectedIds?.has(transaction.id) && "bg-primary/5")}
+              data-testid="transaction-row"
+            >
+              {selectionEnabled && (
+                <TableCell>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds?.has(transaction.id) ?? false}
+                    onChange={() => onToggleSelect?.(transaction.id)}
+                    className="h-4 w-4 rounded border-gray-300"
+                    aria-label={`Select ${transaction.merchant || "transaction"}`}
+                    data-testid="transaction-row-checkbox"
+                  />
+                </TableCell>
+              )}
               <TableCell className="font-medium">
                 {formatDate(transaction.date)}
               </TableCell>
