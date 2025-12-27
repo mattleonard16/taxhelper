@@ -7,6 +7,7 @@
 import { prisma } from "@/lib/prisma";
 import { operationLogger, startTimer } from "@/lib/logger";
 import type { ReceiptJobStatus, Prisma } from "@prisma/client";
+import type { CompletionStatus } from "./receipt-job-repository";
 
 // Status semantics (locked definitions)
 export const RECEIPT_STATUS = {
@@ -73,7 +74,7 @@ export type ServiceResult<T> =
 /**
  * Determine status based on extraction confidence
  */
-export function determineStatusFromConfidence(confidence: number | null): ReceiptJobStatus {
+export function determineStatusFromConfidence(confidence: number | null): CompletionStatus {
   if (confidence === null || confidence < CONFIDENCE_THRESHOLD) {
     return "NEEDS_REVIEW";
   }
@@ -88,7 +89,7 @@ export async function listInbox(
   filters: InboxFilters = {}
 ): Promise<ServiceResult<{ jobs: InboxJob[]; nextCursor: string | null }>> {
   const limit = Math.min(filters.limit ?? 50, 100);
-  
+
   let statusFilter: ReceiptJobStatus[];
   if (filters.status) {
     statusFilter = Array.isArray(filters.status) ? filters.status : [filters.status];
