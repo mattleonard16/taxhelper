@@ -6,7 +6,7 @@
 
 import { createReceiptJobRepository, type ReceiptJobRecord, type ExtractedReceiptData } from "./receipt-job-repository";
 import { extractReceiptData } from "./receipt-extraction";
-import { determineStatusFromConfidence } from "./receipt-jobs-service";
+import { determineStatusFromConfidence, recoverStuckConfirmations } from "./receipt-jobs-service";
 import { logger } from "@/lib/logger";
 import {
   LLMError,
@@ -189,6 +189,12 @@ export async function runReceiptJobWorker(
   const staleAfterMs = options.staleAfterMs ?? 15 * 60 * 1000;
 
   try {
+    try {
+      await recoverStuckConfirmations();
+    } catch (error) {
+      logger.warn("Failed to recover stuck receipt confirmations", { error });
+    }
+
     await repository.requeueStaleJobs(staleAfterMs);
 
     // Get pending jobs

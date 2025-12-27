@@ -400,20 +400,28 @@ export async function confirmJob(
         throw new Error("CONFLICT");
       }
 
+      const refreshedJob = await tx.receiptJob.findUnique({
+        where: { id: jobId },
+      });
+
+      if (!refreshedJob) {
+        throw new Error("NOT_FOUND");
+      }
+
       const transaction = await tx.transaction.create({
         data: {
           userId,
-          date: job.date!,
+          date: refreshedJob.date!,
           type: "OTHER",
-          description: `Receipt: ${job.originalName}`,
-          merchant: job.merchant,
-          totalAmount: job.totalAmount!,
-          taxAmount: job.taxAmount ?? 0,
-          receiptPath: job.storagePath,
-          receiptName: job.originalName,
-          category: job.category,
-          categoryCode: job.categoryCode,
-          isDeductible: job.isDeductible,
+          description: `Receipt: ${refreshedJob.originalName}`,
+          merchant: refreshedJob.merchant,
+          totalAmount: refreshedJob.totalAmount!,
+          taxAmount: refreshedJob.taxAmount ?? 0,
+          receiptPath: refreshedJob.storagePath,
+          receiptName: refreshedJob.originalName,
+          category: refreshedJob.category,
+          categoryCode: refreshedJob.categoryCode,
+          isDeductible: refreshedJob.isDeductible,
         },
       });
 
@@ -471,6 +479,7 @@ export async function confirmJob(
  * Resets stale CONFIRMED jobs to NEEDS_REVIEW for reprocessing.
  */
 export async function recoverStuckConfirmations(): Promise<number> {
+  const getElapsed = startTimer();
   const cutoff = new Date(Date.now() - 5 * 60 * 1000);
   const result = await prisma.receiptJob.updateMany({
     where: {
@@ -483,6 +492,11 @@ export async function recoverStuckConfirmations(): Promise<number> {
       status: "NEEDS_REVIEW",
       updatedAt: new Date(),
     },
+  });
+
+  operationLogger.receiptPipeline("recover_stuck", {
+    count: result.count,
+    durationMs: getElapsed(),
   });
 
   return result.count;

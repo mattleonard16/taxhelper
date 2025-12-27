@@ -90,12 +90,14 @@ describe("receipt-jobs-service", () => {
     it("creates transaction and sets status to CONFIRMED", async () => {
       const job = buildJob({ status: "COMPLETED" });
       const createdTransaction = { id: "txn-123" };
+      const findUniqueMock = vi.fn().mockResolvedValue(job);
 
       vi.mocked(prisma.receiptJob.findFirst).mockResolvedValue(job as never);
       vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
         const tx = {
           receiptJob: {
             updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+            findUnique: findUniqueMock,
             update: vi.fn().mockResolvedValue({ ...job, status: "CONFIRMED", transactionId: "txn-123" }),
           },
           transaction: {
@@ -111,6 +113,38 @@ describe("receipt-jobs-service", () => {
       if (result.success) {
         expect(result.data.transactionId).toBe("txn-123");
       }
+    });
+
+    it("uses latest job data inside the transaction after claim", async () => {
+      const job = buildJob({ status: "COMPLETED", merchant: "Old Merchant" });
+      const refreshedJob = buildJob({ status: "COMPLETED", merchant: "New Merchant" });
+      const createdTransaction = { id: "txn-789" };
+      const findUniqueMock = vi.fn().mockResolvedValue(refreshedJob);
+      const createMock = vi.fn().mockResolvedValue(createdTransaction);
+
+      vi.mocked(prisma.receiptJob.findFirst).mockResolvedValue(job as never);
+      vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
+        const tx = {
+          receiptJob: {
+            updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+            findUnique: findUniqueMock,
+            update: vi.fn().mockResolvedValue({ ...refreshedJob, status: "CONFIRMED", transactionId: "txn-789" }),
+          },
+          transaction: {
+            create: createMock,
+          },
+        };
+        return fn(tx as never);
+      });
+
+      await confirmJob("user-1", "job-1");
+
+      expect(findUniqueMock).toHaveBeenCalledWith({ where: { id: "job-1" } });
+      expect(createMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ merchant: "New Merchant" }),
+        })
+      );
     });
 
     it("is idempotent - returns existing transactionId if already CONFIRMED", async () => {
@@ -198,12 +232,14 @@ describe("receipt-jobs-service", () => {
     it("allows confirm for NEEDS_REVIEW with complete fields", async () => {
       const needsReviewJob = buildJob({ status: "NEEDS_REVIEW" });
       const createdTransaction = { id: "txn-456" };
+      const findUniqueMock = vi.fn().mockResolvedValue(needsReviewJob);
 
       vi.mocked(prisma.receiptJob.findFirst).mockResolvedValue(needsReviewJob as never);
       vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
         const tx = {
           receiptJob: {
             updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+            findUnique: findUniqueMock,
             update: vi.fn().mockResolvedValue({ ...needsReviewJob, status: "CONFIRMED", transactionId: "txn-456" }),
           },
           transaction: {
@@ -288,12 +324,14 @@ describe("receipt-jobs-service", () => {
 
     it("atomic transaction ensures no orphan on partial failure", async () => {
       const job = buildJob({ status: "COMPLETED" });
+      const findUniqueMock = vi.fn().mockResolvedValue(job);
 
       vi.mocked(prisma.receiptJob.findFirst).mockResolvedValue(job as never);
       vi.mocked(prisma.$transaction).mockImplementation(async (fn) => {
         const tx = {
           receiptJob: {
             updateMany: vi.fn().mockResolvedValue({ count: 1 }), // Claim succeeds
+            findUnique: findUniqueMock,
             update: vi.fn(),
           },
           transaction: {

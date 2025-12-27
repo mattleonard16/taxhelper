@@ -5,7 +5,7 @@ import { checkRateLimit, RateLimitConfig, rateLimitedResponse } from "@/lib/rate
 import { createTransactionSchema, transactionQuerySchema } from "@/lib/schemas";
 import { parseDateInput } from "@/lib/date-utils";
 import { buildTransactionSearchWhere } from "@/lib/transactions/transaction-search";
-import { logger } from "@/lib/logger";
+import { logger, operationLogger, startTimer } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   const requestId = getRequestId(request);
@@ -38,6 +38,15 @@ export async function GET(request: NextRequest) {
     }
 
     const { ids, from, to, type, search, minAmount, maxAmount, category, isDeductible, page, limit } = parseResult.data;
+    const getElapsed = startTimer();
+    const searchLogFilters = {
+      hasDateRange: Boolean(from || to),
+      hasType: Boolean(type),
+      hasSearch: Boolean(search),
+      hasAmountRange: minAmount !== undefined || maxAmount !== undefined,
+      hasCategory: Boolean(category),
+      hasDeductible: isDeductible !== undefined,
+    };
 
     // Fetch by explicit IDs (used by Insights drill-down)
     if (ids && ids.length > 0) {
@@ -53,6 +62,14 @@ export async function GET(request: NextRequest) {
 
       const total = transactions.length;
       const pages = Math.ceil(total / uniqueIds.length);
+
+      operationLogger.transactionSearch({
+        requestId,
+        userId,
+        filters: searchLogFilters,
+        resultCount: total,
+        durationMs: getElapsed(),
+      });
 
       const response = NextResponse.json({
         transactions: transactions.map((t) => ({
@@ -99,6 +116,14 @@ export async function GET(request: NextRequest) {
       }),
       prisma.transaction.count({ where }),
     ]);
+
+    operationLogger.transactionSearch({
+      requestId,
+      userId,
+      filters: searchLogFilters,
+      resultCount: total,
+      durationMs: getElapsed(),
+    });
 
     const response = NextResponse.json({
       transactions: transactions.map((t) => ({

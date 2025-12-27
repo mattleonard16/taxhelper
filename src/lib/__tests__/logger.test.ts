@@ -169,15 +169,15 @@ describe('logger', () => {
   });
 
   describe('startTimer', () => {
-    it('returns elapsed time in milliseconds', async () => {
+    it('returns elapsed time in milliseconds', () => {
+      const nowSpy = vi.spyOn(performance, 'now');
+      nowSpy.mockReturnValueOnce(100).mockReturnValueOnce(125);
+
       const getElapsed = startTimer();
-      
-      // Wait a small amount
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
       const elapsed = getElapsed();
-      expect(elapsed).toBeGreaterThanOrEqual(10);
-      expect(elapsed).toBeLessThan(100); // Should complete quickly
+
+      expect(elapsed).toBe(25);
+      nowSpy.mockRestore();
     });
 
     it('returns integer values', () => {

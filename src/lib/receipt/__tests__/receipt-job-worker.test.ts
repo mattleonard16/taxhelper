@@ -5,6 +5,11 @@ vi.mock("../receipt-job-repository", () => ({
   createReceiptJobRepository: vi.fn(),
 }));
 
+vi.mock("../receipt-jobs-service", () => ({
+  determineStatusFromConfidence: vi.fn(),
+  recoverStuckConfirmations: vi.fn().mockResolvedValue(0),
+}));
+
 describe("receipt job worker", () => {
   let runReceiptJobWorker: typeof import("../receipt-job-worker").runReceiptJobWorker;
 
@@ -14,6 +19,7 @@ describe("receipt job worker", () => {
 
   it("requeues stale jobs before processing", async () => {
     const { createReceiptJobRepository } = await import("../receipt-job-repository");
+    const { recoverStuckConfirmations } = await import("../receipt-jobs-service");
     const requeueStaleJobs = vi.fn().mockResolvedValue([]);
     const findPendingJobs = vi.fn().mockResolvedValue([]);
     vi.mocked(createReceiptJobRepository).mockReturnValue({
@@ -23,6 +29,7 @@ describe("receipt job worker", () => {
 
     const result = await runReceiptJobWorker(5, async () => null, { staleAfterMs: 60_000 });
 
+    expect(recoverStuckConfirmations).toHaveBeenCalled();
     expect(requeueStaleJobs).toHaveBeenCalledWith(60_000);
     expect(findPendingJobs).toHaveBeenCalled();
     expect(result.processed).toBe(0);
