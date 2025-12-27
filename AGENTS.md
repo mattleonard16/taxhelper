@@ -23,3 +23,40 @@
 - `src/app/api/` - API routes; `src/app/auth/` - Public auth pages
 - `src/lib/` - Prisma client, auth config, insights generators, receipt processing
 - `prisma/schema.prisma` - Database schema; migrations in `prisma/migrations/`
+
+## E2E Testing (Playwright)
+
+### Locator Strategy
+- **Prefer**: `getByTestId()`, `getByRole()`, `getByLabel()`
+- **Avoid**: `getByText()` for elements that may have duplicates (causes strict mode violations)
+- **Never**: `locator("table")` for virtualized lists - they use div-based rendering
+
+### Required data-testid Hooks
+Virtualized lists and bulk actions require stable test IDs:
+- `data-testid="transactions-list"` - Main list container
+- `data-testid="transaction-row"` - Each visible row
+- `data-testid="select-all-checkbox"` - Header select all
+- `data-testid="transaction-row-checkbox"` - Row selection checkbox
+- `data-testid="bulk-actions-bar"` - Bulk actions container
+- `data-testid="bulk-selected-count"` - Selected count display
+- `data-testid="bulk-clear-selection"` - Clear selection button
+- `data-testid="filter-chips"` - Active filters container
+- `data-testid="filter-chip-{key}"` - Individual filter chips
+- `data-testid="command-palette"` - Command palette dialog
+- `data-testid="command-palette-input"` - Command palette search input
+
+### Standard Wait Pattern
+```typescript
+// Wait for API response, then assert UI
+await page.waitForResponse(
+  (response) => response.url().includes("/api/transactions") && response.status() === 200,
+  { timeout: 10000 }
+);
+const listOrEmpty = page.getByTestId("transactions-list").or(page.getByText("No transactions found"));
+await expect(listOrEmpty).toBeVisible({ timeout: 5000 });
+```
+
+### Virtualization Considerations
+- Only assert on visible rows; the list renders a subset of data
+- Use `getByTestId("transaction-row")` to count visible rows
+- Scroll the container if testing rows outside the viewport

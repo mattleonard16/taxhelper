@@ -214,6 +214,157 @@ describe('schemas', () => {
 
             expect(result.success).toBe(false);
         });
+
+        // Empty string normalization tests
+        it('should normalize empty strings to undefined', () => {
+            const result = transactionQuerySchema.safeParse({
+                from: '',
+                to: '',
+                type: '',
+                search: '',
+                category: '',
+            });
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.from).toBeUndefined();
+                expect(result.data.to).toBeUndefined();
+                expect(result.data.type).toBeUndefined();
+                expect(result.data.search).toBeUndefined();
+                expect(result.data.category).toBeUndefined();
+            }
+        });
+
+        it('should normalize empty page/limit to defaults', () => {
+            const result = transactionQuerySchema.safeParse({
+                page: '',
+                limit: '',
+            });
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.page).toBe(1);
+                expect(result.data.limit).toBe(20);
+            }
+        });
+
+        // NaN handling tests
+        it('should treat NaN minAmount as undefined', () => {
+            const result = transactionQuerySchema.safeParse({
+                minAmount: 'not-a-number',
+            });
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.minAmount).toBeUndefined();
+            }
+        });
+
+        it('should treat NaN maxAmount as undefined', () => {
+            const result = transactionQuerySchema.safeParse({
+                maxAmount: 'abc',
+            });
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.maxAmount).toBeUndefined();
+            }
+        });
+
+        // Invalid enum tests
+        it('should reject invalid category code', () => {
+            const result = transactionQuerySchema.safeParse({
+                category: 'INVALID_CATEGORY',
+            });
+
+            expect(result.success).toBe(false);
+        });
+
+        it('should accept valid category codes', () => {
+            const validCodes = ['MEALS', 'TRAVEL', 'OFFICE', 'UTILITIES', 'SOFTWARE', 'PROFESSIONAL', 'OTHER'];
+            for (const code of validCodes) {
+                const result = transactionQuerySchema.safeParse({ category: code });
+                expect(result.success).toBe(true);
+                if (result.success) {
+                    expect(result.data.category).toBe(code);
+                }
+            }
+        });
+
+        it('should reject invalid transaction type', () => {
+            const result = transactionQuerySchema.safeParse({
+                type: 'INVALID_TYPE',
+            });
+
+            expect(result.success).toBe(false);
+        });
+
+        // Range validation tests
+        it('should reject minAmount > maxAmount', () => {
+            const result = transactionQuerySchema.safeParse({
+                minAmount: '100',
+                maxAmount: '50',
+            });
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                const messages = result.error.issues.map(i => i.message).join(' ');
+                expect(messages).toContain('minAmount cannot exceed maxAmount');
+            }
+        });
+
+        it('should reject from date after to date', () => {
+            const result = transactionQuerySchema.safeParse({
+                from: '2024-12-31',
+                to: '2024-01-01',
+            });
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                const messages = result.error.issues.map(i => i.message).join(' ');
+                expect(messages).toContain('from date cannot be after to date');
+            }
+        });
+
+        it('should accept valid date range', () => {
+            const result = transactionQuerySchema.safeParse({
+                from: '2024-01-01',
+                to: '2024-12-31',
+            });
+
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept equal min/max amounts', () => {
+            const result = transactionQuerySchema.safeParse({
+                minAmount: '50',
+                maxAmount: '50',
+            });
+
+            expect(result.success).toBe(true);
+        });
+
+        // isDeductible normalization
+        it('should normalize empty isDeductible to undefined', () => {
+            const result = transactionQuerySchema.safeParse({
+                isDeductible: '',
+            });
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.isDeductible).toBeUndefined();
+            }
+        });
+
+        it('should parse isDeductible true/false strings', () => {
+            const trueResult = transactionQuerySchema.safeParse({ isDeductible: 'true' });
+            const falseResult = transactionQuerySchema.safeParse({ isDeductible: 'false' });
+
+            expect(trueResult.success).toBe(true);
+            expect(falseResult.success).toBe(true);
+            if (trueResult.success) expect(trueResult.data.isDeductible).toBe(true);
+            if (falseResult.success) expect(falseResult.data.isDeductible).toBe(false);
+        });
     });
 
     describe('parseBody', () => {

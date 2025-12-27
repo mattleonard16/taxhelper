@@ -7,12 +7,16 @@ const types = ["SALES_TAX", "INCOME_TAX", "OTHER"] as const;
 const dateRanges = ["7d", "30d", "90d"] as const;
 const minAmounts = [0, 50, 100] as const;
 const maxAmounts = [100, 500, "unlimited"] as const;
+const categories = [undefined, "MEALS", "TRAVEL"] as const;
+const deductibles = [undefined, true, false] as const;
 
 type CaseTuple = [
   typeof types[number],
   typeof dateRanges[number],
   typeof minAmounts[number],
-  typeof maxAmounts[number]
+  typeof maxAmounts[number],
+  typeof categories[number],
+  typeof deductibles[number]
 ];
 
 const rangeToDays: Record<(typeof dateRanges)[number], number> = {
@@ -67,7 +71,7 @@ const getCasePairs = (caseValues: unknown[]) => {
 };
 
 const generatePairwiseCases = (): CaseTuple[] => {
-  const values = [types, dateRanges, minAmounts, maxAmounts].map((list) =>
+  const values = [types, dateRanges, minAmounts, maxAmounts, categories, deductibles].map((list) =>
     Array.from(list)
   );
   const allCases = cartesianProduct(values) as CaseTuple[];
@@ -106,7 +110,7 @@ const pairwiseCases = generatePairwiseCases();
 
 describe("transaction search pairwise coverage", () => {
   it("covers all parameter pairs", () => {
-    const values = [types, dateRanges, minAmounts, maxAmounts].map((list) =>
+    const values = [types, dateRanges, minAmounts, maxAmounts, categories, deductibles].map((list) =>
       Array.from(list)
     );
     const allPairs = buildAllPairs(values);
@@ -122,8 +126,8 @@ describe("transaction search pairwise coverage", () => {
   });
 
   it.each(pairwiseCases)(
-    "builds where clause for %s %s min=%s max=%s",
-    (type, dateRange, minAmount, maxAmount) => {
+    "builds where clause for %s %s min=%s max=%s cat=%s deduct=%s",
+    (type, dateRange, minAmount, maxAmount, category, isDeductible) => {
       const { from, to } = getRangeDates(dateRange);
       const params: Record<string, string> = {
         type,
@@ -134,6 +138,12 @@ describe("transaction search pairwise coverage", () => {
 
       if (maxAmount !== "unlimited") {
         params.maxAmount = String(maxAmount);
+      }
+      if (category !== undefined) {
+        params.category = category;
+      }
+      if (isDeductible !== undefined) {
+        params.isDeductible = String(isDeductible);
       }
 
       const parsed = transactionQuerySchema.parse(params);
@@ -151,6 +161,18 @@ describe("transaction search pairwise coverage", () => {
       }
 
       expect(where.totalAmount?.gte).toBe(minAmount);
+
+      if (category !== undefined) {
+        expect(where.categoryCode).toBe(category);
+      } else {
+        expect(where.categoryCode).toBeUndefined();
+      }
+
+      if (isDeductible !== undefined) {
+        expect(where.isDeductible).toBe(isDeductible);
+      } else {
+        expect(where.isDeductible).toBeUndefined();
+      }
     }
   );
 });
