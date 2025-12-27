@@ -6,6 +6,7 @@
 
 import { createReceiptJobRepository, type ReceiptJobRecord, type ExtractedReceiptData } from "./receipt-job-repository";
 import { extractReceiptData } from "./receipt-extraction";
+import { determineStatusFromConfidence } from "./receipt-jobs-service";
 import { logger } from "@/lib/logger";
 import {
   LLMError,
@@ -88,13 +89,18 @@ export async function processReceiptJob(
       extractionConfidence: extracted.confidence,
     };
 
-    // Mark as completed
-    await repository.markCompleted(job.id, data);
+    // Determine status based on extraction confidence
+    const status = determineStatusFromConfidence(data.extractionConfidence ?? null);
+
+    // Mark as completed with appropriate status
+    await repository.markCompleted(job.id, data, status);
 
     logger.info("Receipt job processed successfully", {
       jobId: job.id,
       userId: job.userId,
       merchant: data.merchant,
+      status,
+      confidence: data.extractionConfidence,
     });
 
     return { jobId: job.id, success: true, extracted: data };

@@ -6,6 +6,9 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma, type ReceiptJobStatus } from "@prisma/client";
 
+// Valid completion statuses (after successful extraction)
+export type CompletionStatus = "NEEDS_REVIEW" | "COMPLETED";
+
 export interface CreateReceiptJobInput {
   userId: string;
   originalName: string;
@@ -67,7 +70,7 @@ export interface ReceiptJobRepository {
   findByUser(userId: string, limit?: number): Promise<ReceiptJobRecord[]>;
   findPendingJobs(limit?: number): Promise<ReceiptJobRecord[]>;
   markProcessing(id: string): Promise<ReceiptJobRecord | null>;
-  markCompleted(id: string, data: ExtractedReceiptData, transactionId?: string): Promise<ReceiptJobRecord | null>;
+  markCompleted(id: string, data: ExtractedReceiptData, status?: CompletionStatus, transactionId?: string): Promise<ReceiptJobRecord | null>;
   markFailed(id: string, error: string): Promise<ReceiptJobRecord | null>;
   requeueStaleJobs(staleAfterMs: number): Promise<ReceiptJobRecord[]>;
 }
@@ -123,7 +126,7 @@ export const createReceiptJobRepository = (
 
   findById: async (id, userId) => {
     const job = await client.receiptJob.findFirst({
-      where: { id, userId },
+      where: { id, userId, discardedAt: null },
     });
     return job ? mapJob(job) : null;
   },
@@ -143,6 +146,7 @@ export const createReceiptJobRepository = (
     const jobs = await client.receiptJob.findMany({
       where: {
         status: "QUEUED",
+        discardedAt: null,
       },
       orderBy: { createdAt: "asc" },
       take: limit,
@@ -154,7 +158,7 @@ export const createReceiptJobRepository = (
   markProcessing: async (id) => {
     try {
       const updated = await client.receiptJob.updateMany({
-        where: { id, status: "QUEUED" },
+        where: { id, status: "QUEUED", discardedAt: null },
         data: {
           status: "PROCESSING",
           attempts: { increment: 1 },
@@ -173,12 +177,12 @@ export const createReceiptJobRepository = (
     }
   },
 
-  markCompleted: async (id, data, transactionId) => {
+  markCompleted: async (id, data, status = "COMPLETED", transactionId) => {
     try {
       const job = await client.receiptJob.update({
         where: { id },
         data: {
-          status: "COMPLETED",
+          status,
           merchant: data.merchant ?? null,
           date: data.date ?? null,
           totalAmount: data.totalAmount ?? null,
@@ -233,6 +237,7 @@ export const createReceiptJobRepository = (
       where: {
         status: "PROCESSING",
         processingStartedAt: { lt: cutoff },
+        discardedAt: null,
       },
       orderBy: { processingStartedAt: "asc" },
     });

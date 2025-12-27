@@ -68,17 +68,45 @@ export const updateTemplateSchema = z.object({
 });
 export type UpdateTemplateInput = z.infer<typeof updateTemplateSchema>;
 
+// Normalize empty strings to undefined
+const emptyToUndefined = (val: unknown) => {
+    if (val === '' || val === null) return undefined;
+    return val;
+};
+
+// Coerce to number, treating NaN as undefined
+const coerceNumberOrUndefined = z.preprocess((val) => {
+    if (val === '' || val === null || val === undefined) return undefined;
+    const num = Number(val);
+    if (Number.isNaN(num)) return undefined;
+    return num;
+}, z.number().nonnegative().optional());
+
+// Valid category codes
+export const VALID_CATEGORY_CODES = ['MEALS', 'TRAVEL', 'OFFICE', 'UTILITIES', 'SOFTWARE', 'PROFESSIONAL', 'OTHER'] as const;
+export const CategoryCodeSchema = z.enum(VALID_CATEGORY_CODES);
+
 // Query params for transactions list - accepts YYYY-MM-DD
 export const transactionQuerySchema = z.object({
-    from: dateStringSchema.optional(),
-    to: dateStringSchema.optional(),
-    type: TransactionTypeSchema.optional(),
-    search: z.string().max(200).optional(),
-    minAmount: z.coerce.number().nonnegative().optional(),
-    maxAmount: z.coerce.number().nonnegative().optional(),
+    from: z.preprocess(emptyToUndefined, dateStringSchema.optional()),
+    to: z.preprocess(emptyToUndefined, dateStringSchema.optional()),
+    type: z.preprocess(emptyToUndefined, TransactionTypeSchema.optional()),
+    search: z.preprocess(emptyToUndefined, z.string().max(200).optional()),
+    minAmount: coerceNumberOrUndefined,
+    maxAmount: coerceNumberOrUndefined,
+    category: z.preprocess(emptyToUndefined, CategoryCodeSchema.optional()),
+    isDeductible: z.preprocess(
+        (val) => {
+            if (val === '' || val === null || val === undefined) return undefined;
+            if (val === 'true') return true;
+            if (val === 'false') return false;
+            return undefined;
+        },
+        z.boolean().optional()
+    ),
     ids: z.preprocess(
         (val) => {
-            if (typeof val !== 'string') return undefined;
+            if (typeof val !== 'string' || val.trim() === '') return undefined;
 
             const ids = val
                 .split(',')
@@ -89,8 +117,37 @@ export const transactionQuerySchema = z.object({
         },
         z.array(z.string().min(1)).max(200).optional()
     ),
-    page: z.coerce.number().int().positive().default(1),
-    limit: z.coerce.number().int().positive().max(100).default(20),
+    page: z.preprocess(
+        (val) => (val === '' || val === null || val === undefined ? 1 : val),
+        z.coerce.number().int().positive().default(1)
+    ),
+    limit: z.preprocess(
+        (val) => (val === '' || val === null || val === undefined ? 20 : val),
+        z.coerce.number().int().positive().max(100).default(20)
+    ),
+}).superRefine((data, ctx) => {
+    // Validate date range: from must not be after to
+    if (data.from && data.to) {
+        const fromDate = new Date(data.from);
+        const toDate = new Date(data.to);
+        if (fromDate > toDate) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'from date cannot be after to date',
+                path: ['from'],
+            });
+        }
+    }
+    // Validate amount range: min must not exceed max
+    if (data.minAmount !== undefined && data.maxAmount !== undefined) {
+        if (data.minAmount > data.maxAmount) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'minAmount cannot exceed maxAmount',
+                path: ['minAmount'],
+            });
+        }
+    }
 });
 export type TransactionQueryInput = z.infer<typeof transactionQuerySchema>;
 
