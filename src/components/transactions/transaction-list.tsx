@@ -33,6 +33,8 @@ const VIRTUAL_OVERSCAN = 8;
 const VIRTUAL_VIEWPORT_HEIGHT = 560;
 const VIRTUAL_GRID_TEMPLATE =
   "grid-cols-[140px_110px_minmax(140px,1fr)_minmax(160px,1.2fr)_120px_110px_90px_120px]";
+const VIRTUAL_GRID_TEMPLATE_WITH_SELECTION =
+  "grid-cols-[40px_140px_110px_minmax(140px,1fr)_minmax(160px,1.2fr)_120px_110px_90px_120px]";
 const VIRTUAL_CELL_BASE = "px-3 py-2 whitespace-nowrap md:px-2";
 
 function calculateTaxRate(taxAmount: string, totalAmount: string): string {
@@ -98,7 +100,14 @@ function VirtualizedTransactionTable({
   transactions,
   onEdit,
   onDelete,
+  selectedIds,
+  onToggleSelect,
+  onSelectAll,
 }: TransactionListProps) {
+  const selectionEnabled = selectedIds !== undefined && onToggleSelect !== undefined;
+  const allSelected = selectionEnabled && transactions.length > 0 &&
+    transactions.every((t) => selectedIds?.has(t.id));
+  const someSelected = selectionEnabled && transactions.some((t) => selectedIds?.has(t.id));
   const parentRef = useRef<HTMLDivElement | null>(null);
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual hook is required here.
   const rowVirtualizer = useVirtualizer({
@@ -114,15 +123,36 @@ function VirtualizedTransactionTable({
     transactions.length * VIRTUAL_ROW_HEIGHT,
     VIRTUAL_VIEWPORT_HEIGHT
   );
+  const gridTemplate = selectionEnabled
+    ? VIRTUAL_GRID_TEMPLATE_WITH_SELECTION
+    : VIRTUAL_GRID_TEMPLATE;
 
   return (
-    <div className="rounded-xl border border-border bg-card/50 shadow-lg backdrop-blur">
+    <div
+      className="rounded-xl border border-border bg-card/50 shadow-lg backdrop-blur"
+      data-testid="transactions-list"
+    >
       <div className="overflow-x-auto">
         <div role="table" className="min-w-[860px] text-sm">
           <div
             role="row"
-            className={`grid ${VIRTUAL_GRID_TEMPLATE} items-center border-b bg-card/40 text-foreground`}
+            className={`grid ${gridTemplate} items-center border-b bg-card/40 text-foreground`}
           >
+            {selectionEnabled && (
+              <div role="columnheader" className={VIRTUAL_CELL_BASE}>
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = someSelected && !allSelected;
+                  }}
+                  onChange={onSelectAll}
+                  className="h-4 w-4 rounded border-gray-300"
+                  aria-label="Select all"
+                  data-testid="select-all-checkbox"
+                />
+              </div>
+            )}
             <div role="columnheader" className={VIRTUAL_CELL_BASE}>
               Date
             </div>
@@ -168,7 +198,12 @@ function VirtualizedTransactionTable({
                   <div
                     key={transaction.id}
                     role="row"
-                    className={`group grid ${VIRTUAL_GRID_TEMPLATE} items-center border-b transition-colors hover:bg-muted/50`}
+                    className={cn(
+                      "group grid items-center border-b transition-colors hover:bg-muted/50",
+                      gridTemplate,
+                      selectionEnabled && selectedIds?.has(transaction.id) && "bg-primary/5"
+                    )}
+                    data-testid="transaction-row"
                     style={{
                       position: "absolute",
                       top: 0,
@@ -176,6 +211,18 @@ function VirtualizedTransactionTable({
                       width: "100%",
                     }}
                   >
+                    {selectionEnabled && (
+                      <div role="cell" className={VIRTUAL_CELL_BASE}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds?.has(transaction.id) ?? false}
+                          onChange={() => onToggleSelect?.(transaction.id)}
+                          className="h-4 w-4 rounded border-gray-300"
+                          aria-label={`Select ${transaction.merchant || "transaction"}`}
+                          data-testid="transaction-row-checkbox"
+                        />
+                      </div>
+                    )}
                     <div role="cell" className={`${VIRTUAL_CELL_BASE} font-medium`}>
                       {formatDate(transaction.date)}
                     </div>
@@ -283,6 +330,9 @@ export const TransactionList = React.memo(function TransactionList({
         transactions={transactions}
         onEdit={onEdit}
         onDelete={onDelete}
+        selectedIds={selectedIds}
+        onToggleSelect={onToggleSelect}
+        onSelectAll={onSelectAll}
       />
     );
   }

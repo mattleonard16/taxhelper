@@ -166,4 +166,29 @@ describe('TransactionList', () => {
     // Transaction 3: tax=8, total=100, preTax=92, rate=8.7%
     expect(screen.getByText('8.7%')).toBeInTheDocument();
   });
+
+  it('shows selection controls in virtualized list', () => {
+    const manyTransactions: Transaction[] = Array.from({ length: 60 }, (_, index) => ({
+      id: `${index + 1}`,
+      date: '2024-01-15T12:00:00.000Z',
+      type: 'OTHER',
+      description: `Item ${index + 1}`,
+      merchant: `Merchant ${index + 1}`,
+      totalAmount: '10.00',
+      taxAmount: '1.00',
+    }));
+
+    render(
+      <TransactionList
+        transactions={manyTransactions}
+        onEdit={mockOnEdit}
+        onDelete={mockOnDelete}
+        selectedIds={new Set()}
+        onToggleSelect={vi.fn()}
+        onSelectAll={vi.fn()}
+      />
+    );
+
+    expect(screen.getByLabelText('Select all')).toBeInTheDocument();
+  });
 });
