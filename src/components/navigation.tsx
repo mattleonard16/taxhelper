@@ -13,10 +13,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CommandPalette } from "@/components/command-palette";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/transactions", label: "Transactions" },
+  { href: "/receipts", label: "Receipts" },
   { href: "/insights", label: "Insights" },
   { href: "/deductions", label: "Deductions" },
   { href: "/templates", label: "Templates" },
@@ -98,6 +100,7 @@ export function Navigation() {
           </DropdownMenu>
         </div>
       </div>
+      <CommandPalette />
     </nav>
   );
 }

@@ -6,17 +6,17 @@ import { cn } from "@/lib/utils";
 import {
     LayoutDashboard,
     Receipt,
-    RefreshCw,
     Lightbulb,
     BadgeDollarSign,
+    Inbox,
 } from "lucide-react";
 
 const navItems = [
     { href: "/dashboard", label: "Home", icon: LayoutDashboard },
     { href: "/transactions", label: "Trans", icon: Receipt },
+    { href: "/receipts", label: "Inbox", icon: Inbox },
     { href: "/insights", label: "Insights", icon: Lightbulb },
     { href: "/deductions", label: "Deduct", icon: BadgeDollarSign },
-    { href: "/recurring", label: "Recur", icon: RefreshCw },
 ];
 
 export function MobileNav() {
