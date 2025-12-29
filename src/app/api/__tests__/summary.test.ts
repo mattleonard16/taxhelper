@@ -102,7 +102,13 @@ describe("summary API route", () => {
     // Mock groupBy - called twice: once for type, once for merchant
     prismaTransaction.groupBy
       .mockResolvedValueOnce([
-        { type: "SALES_TAX", _sum: { taxAmount: new Prisma.Decimal(10) } },
+        {
+          type: "SALES_TAX",
+          _sum: {
+            taxAmount: new Prisma.Decimal(10),
+            totalAmount: new Prisma.Decimal(80),
+          },
+        },
       ])
       .mockResolvedValueOnce([
         { merchant: "Amazon", _sum: { taxAmount: new Prisma.Decimal(10) } },
@@ -135,6 +141,7 @@ describe("summary API route", () => {
       todayTax: "3",
       transactionCount: 3,
       byType: { SALES_TAX: "10", INCOME_TAX: "0", OTHER: "0" },
+      byTypeTotals: { SALES_TAX: "80", INCOME_TAX: "0", OTHER: "0" },
     });
     expect(json.timeseries).toEqual([
       { date: "2024-01-15", tax: "7" },

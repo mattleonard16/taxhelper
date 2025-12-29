@@ -12,6 +12,7 @@ import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist
 import { ReceiptOrchestrationStats } from "@/components/dashboard/receipt-orchestration-stats";
 import { CategoryBreakdownChart, CategoryData } from "@/components/dashboard/category-breakdown-chart";
 import { DeductibleSummary } from "@/components/dashboard/deductible-summary";
+import { BalanceCard } from "@/components/dashboard/balance-card";
 import { TransactionForm } from "@/components/transactions/transaction-form";
 import { TransactionList } from "@/components/transactions/transaction-list";
 import { getDateRanges } from "@/lib/format";
@@ -213,7 +214,7 @@ export default function DashboardPage() {
 
               <div className="grid gap-6 md:grid-cols-2">
                 <CategoryBreakdownChart categories={receiptStats.categories} />
-                <div /> {/* Placeholder for balance */}
+                <BalanceCard totals={summary.byTypeTotals} />
               </div>
             </>
           )}

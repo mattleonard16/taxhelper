@@ -7,6 +7,7 @@ A tax awareness app that helps people track taxes, scan receipts with AI, and di
 - **Track Sales Tax**: Log purchases and see how much sales tax you're paying
 - **Track Income Tax**: Record paycheck withholdings to understand your income tax burden
 - **Visual Insights**: Charts showing tax trends over time, by type, and by merchant
+- **Balance Overview**: See income minus expenses for the selected period
 - **Tax Templates**: Save common tax rates for quick entry
 - **Period Summaries**: View tax totals for today, this month, or this year
 - **Receipt Scanning**: Upload receipts for automatic OCR + LLM extraction
@@ -186,4 +187,3 @@ The Neon serverless driver works perfectly with Vercel's edge functions.
 ## License
 
 MIT
-

@@ -24,6 +24,9 @@
 - `src/lib/` - Prisma client, auth config, insights generators, receipt processing
 - `prisma/schema.prisma` - Database schema; migrations in `prisma/migrations/`
 
+## TODO
+- Type safety: centralize API response types (e.g., `src/types/api.ts`) and normalize money typing.
+
 ## E2E Testing (Playwright)
 
 ### Locator Strategy
