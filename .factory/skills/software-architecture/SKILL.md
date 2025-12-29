@@ -17,7 +17,7 @@ This skill provides architectural guidance specific to the TaxHelper codebase.
 
 ## Project Architecture
 
-```
+```text
 src/
 ├── app/                    # Next.js App Router
 │   ├── (app)/              # Authenticated routes (dashboard, transactions, insights)
@@ -31,13 +31,13 @@ src/
 │   ├── insights/           # Insight generation domain
 │   └── [shared]/           # Shared utilities
 └── types/                  # Shared TypeScript types
-```
+```text
 
 ## Core Principles
 
 ### 1. Clean Architecture Layers
 
-```
+```text
 ┌─────────────────────────────────────────────┐
 │              Presentation Layer             │
 │    (React Components, App Router Pages)     │

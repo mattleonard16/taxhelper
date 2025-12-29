@@ -11,7 +11,7 @@ This skill provides patterns for building consistent, secure API routes in TaxHe
 
 - Creating new API endpoints
 - Adding authentication to routes
-- Implementing request validation
+- Implementing validation for requests
 - Adding rate limiting
 - Handling errors consistently
 - Working with Prisma in API routes

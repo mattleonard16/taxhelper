@@ -29,4 +29,12 @@ describe("calculateBalanceTotals", () => {
       balance: 0,
     });
   });
+
+  it("returns zeros when totals are undefined", () => {
+    expect(calculateBalanceTotals(undefined)).toEqual({
+      income: 0,
+      expenses: 0,
+      balance: 0,
+    });
+  });
 });

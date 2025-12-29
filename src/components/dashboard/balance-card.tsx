@@ -12,7 +12,10 @@ function parseAmount(value: string | undefined): number {
   return Number.isFinite(num) ? num : 0;
 }
 
-export function calculateBalanceTotals(totals: BalanceTotals) {
+export function calculateBalanceTotals(totals?: BalanceTotals) {
+  if (!totals) {
+    return { income: 0, expenses: 0, balance: 0 };
+  }
   const income = parseAmount(totals.INCOME_TAX);
   const sales = parseAmount(totals.SALES_TAX);
   const other = parseAmount(totals.OTHER);
