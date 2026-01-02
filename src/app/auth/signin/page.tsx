@@ -1,7 +1,7 @@
 "use client";
 
-import { signIn, useSession } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { signIn } from "next-auth/react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -14,57 +14,32 @@ import { Suspense } from "react";
 // Check for optional auth providers
 const hasGoogle = process.env.NEXT_PUBLIC_HAS_GOOGLE_AUTH === "true";
 const hasEmail = process.env.NEXT_PUBLIC_HAS_EMAIL_AUTH === "true";
-const devLoginEmail = process.env.NEXT_PUBLIC_DEV_LOGIN_EMAIL || "";
-const devLoginPassword = process.env.NEXT_PUBLIC_DEV_LOGIN_PASSWORD || "";
-const hasDevLogin =
+const devLoginEnabled = process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN === "true";
+const devLoginEmail = process.env.NEXT_PUBLIC_DEV_LOGIN_EMAIL;
+const devLoginPassword = process.env.NEXT_PUBLIC_DEV_LOGIN_PASSWORD;
+const devLoginAvailable =
+  devLoginEnabled &&
   process.env.NODE_ENV !== "production" &&
-  process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN === "true" &&
-  devLoginEmail.length > 0 &&
-  devLoginPassword.length > 0;
+  Boolean(devLoginEmail && devLoginPassword);
+
+const getSafeCallbackUrl = (value: string | null) => {
+  if (!value) return "/dashboard";
+  if (value.startsWith("/") && !value.startsWith("//")) return value;
+  return "/dashboard";
+};
 
 function SignInForm() {
   const router = useRouter();
-  const { status } = useSession();
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "true";
-  const rawCallbackUrl = searchParams.get("callbackUrl");
+  const callbackUrl = getSafeCallbackUrl(searchParams.get("callbackUrl"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [magicEmail, setMagicEmail] = useState("");
-  const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [emailSent, setEmailSent] = useState(false);
-
-  useEffect(() => {
-    const value = rawCallbackUrl;
-    if (!value) {
-      setCallbackUrl("/dashboard");
-      return;
-    }
-    if (value.startsWith("/") && !value.startsWith("//")) {
-      setCallbackUrl(value);
-      return;
-    }
-    try {
-      const parsed = new URL(value);
-      if (parsed.origin === window.location.origin) {
-        setCallbackUrl(`${parsed.pathname}${parsed.search}${parsed.hash}`);
-        return;
-      }
-    } catch {
-      // Ignore invalid callback URLs
-    }
-    setCallbackUrl("/dashboard");
-  }, [rawCallbackUrl]);
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (status === "authenticated" && callbackUrl) {
-      router.push(callbackUrl || "/dashboard");
-    }
-  }, [status, router, callbackUrl]);
 
   const handleCredentialsSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,13 +53,13 @@ function SignInForm() {
         redirect: false,
       });
 
-      if (!result || result.error || result.ok === false) {
+      if (result?.error) {
         setError("Invalid email or password");
         setLoading(false);
         return;
       }
 
-      router.push(callbackUrl || "/dashboard");
+      router.push(callbackUrl);
     } catch {
       setError("An error occurred. Please try again.");
       setLoading(false);
@@ -96,10 +71,36 @@ function SignInForm() {
     setLoading(true);
 
     try {
-      await signIn("email", { email: magicEmail, callbackUrl: callbackUrl || "/dashboard" });
+      await signIn("email", { email: magicEmail, callbackUrl });
       setEmailSent(true);
     } catch (error) {
       console.error("Sign in error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDevLogin = async () => {
+    if (!devLoginAvailable || !devLoginEmail || !devLoginPassword) return;
+
+    setError("");
+    setLoading(true);
+    try {
+      const result = await signIn("credentials", {
+        email: devLoginEmail,
+        password: devLoginPassword,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Dev login failed");
+        setLoading(false);
+        return;
+      }
+
+      router.push(callbackUrl);
+    } catch {
+      setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -168,43 +169,22 @@ function SignInForm() {
           </Link>
         </p>
 
-        {/* Dev Login Button */}
-        {hasDevLogin && (
+        {/* Optional: Dev Login */}
+        {devLoginAvailable && (
           <>
             <div className="relative">
               <Separator />
               <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                dev mode
+                dev only
               </span>
             </div>
             <Button
               variant="outline"
-              className="w-full h-11 border-dashed border-amber-500/50 text-amber-600 hover:bg-amber-500/10"
-              onClick={async () => {
-                setEmail(devLoginEmail);
-                setPassword(devLoginPassword);
-                setLoading(true);
-                setError("");
-                try {
-                  const result = await signIn("credentials", {
-                    email: devLoginEmail,
-                    password: devLoginPassword,
-                    redirect: false,
-                  });
-                  if (!result || result.error || result.ok === false) {
-                    setError("Dev login failed. Check ENABLE_DEV_LOGIN and DEV_LOGIN_*.");
-                    setLoading(false);
-                    return;
-                  }
-                  router.push(callbackUrl || "/dashboard");
-                } catch {
-                  setError("Dev login failed");
-                  setLoading(false);
-                }
-              }}
+              className="w-full h-11"
+              onClick={handleDevLogin}
               disabled={loading}
             >
-              {loading ? "Signing in..." : "Dev Login"}
+              Dev Login
             </Button>
           </>
         )}
@@ -221,7 +201,7 @@ function SignInForm() {
             <Button
               variant="outline"
               className="w-full h-11"
-              onClick={() => signIn("google", { callbackUrl: callbackUrl || "/dashboard" })}
+              onClick={() => signIn("google", { callbackUrl })}
             >
               <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
                 <path
