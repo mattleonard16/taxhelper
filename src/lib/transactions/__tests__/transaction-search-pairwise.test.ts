@@ -71,8 +71,8 @@ const getCasePairs = (caseValues: unknown[]) => {
 };
 
 const generatePairwiseCases = (): CaseTuple[] => {
-  const values = [types, dateRanges, minAmounts, maxAmounts, categories, deductibles].map((list) =>
-    Array.from(list)
+  const values = [types, dateRanges, minAmounts, maxAmounts, categories, deductibles].map(
+    (list) => Array.from(list as readonly unknown[])
   );
   const allCases = cartesianProduct(values) as CaseTuple[];
   const uncovered = buildAllPairs(values);
@@ -110,8 +110,8 @@ const pairwiseCases = generatePairwiseCases();
 
 describe("transaction search pairwise coverage", () => {
   it("covers all parameter pairs", () => {
-    const values = [types, dateRanges, minAmounts, maxAmounts, categories, deductibles].map((list) =>
-      Array.from(list)
+    const values = [types, dateRanges, minAmounts, maxAmounts, categories, deductibles].map(
+      (list) => Array.from(list as readonly unknown[])
     );
     const allPairs = buildAllPairs(values);
     const covered = new Set<string>();
@@ -148,19 +148,21 @@ describe("transaction search pairwise coverage", () => {
 
       const parsed = transactionQuerySchema.parse(params);
       const where = buildTransactionSearchWhere("user_1", parsed);
+      const dateFilter = where.date as { gte?: Date; lte?: Date } | undefined;
+      const amountFilter = where.totalAmount as { gte?: number; lte?: number } | undefined;
 
       expect(where.userId).toBe("user_1");
       expect(where.type).toBe(type);
-      expect(where.date?.gte).toEqual(parseDateInput(from, "start"));
-      expect(where.date?.lte).toEqual(parseDateInput(to, "end"));
+      expect(dateFilter?.gte).toEqual(parseDateInput(from, "start"));
+      expect(dateFilter?.lte).toEqual(parseDateInput(to, "end"));
 
       if (maxAmount === "unlimited") {
-        expect(where.totalAmount?.lte).toBeUndefined();
+        expect(amountFilter?.lte).toBeUndefined();
       } else {
-        expect(where.totalAmount?.lte).toBe(maxAmount);
+        expect(amountFilter?.lte).toBe(maxAmount);
       }
 
-      expect(where.totalAmount?.gte).toBe(minAmount);
+      expect(amountFilter?.gte).toBe(minAmount);
 
       if (category !== undefined) {
         expect(where.categoryCode).toBe(category);
