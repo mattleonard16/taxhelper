@@ -2,12 +2,23 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("next-auth", () => ({
-  getServerSession: vi.fn(),
+vi.mock("@/lib/api-utils", () => ({
+  getAuthUser: vi.fn(),
+  ApiErrors: {
+    unauthorized: () => new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 }),
+    internal: () => new Response(JSON.stringify({ error: "Internal error" }), { status: 500 }),
+  },
+  getRequestId: () => "test-request-id",
+  attachRequestId: (res: Response) => res,
 }));
 
-vi.mock("@/lib/auth", () => ({
-  authOptions: {},
+vi.mock("@/lib/rate-limit", () => ({
+  checkRateLimit: vi.fn().mockResolvedValue({
+    success: true,
+    headers: new Map(),
+  }),
+  RateLimitConfig: { api: {} },
+  rateLimitedResponse: () => new Response(JSON.stringify({ error: "Rate limited" }), { status: 429 }),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -24,7 +35,8 @@ vi.mock("@/lib/prisma", () => ({
 
 import { GET } from "@/app/api/receipts/stats/route";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
+import { getAuthUser } from "@/lib/api-utils";
+import { NextRequest } from "next/server";
 
 describe("receipt stats API", () => {
   beforeEach(() => {
@@ -32,9 +44,11 @@ describe("receipt stats API", () => {
   });
 
   it("filters out discarded receipt jobs in stats queries", async () => {
-    vi.mocked(getServerSession).mockResolvedValue({
-      user: { id: "user-1" },
-    } as never);
+    vi.mocked(getAuthUser).mockResolvedValue({
+      id: "user-1",
+      email: "test@example.com",
+      name: "Test User",
+    });
 
     vi.mocked(prisma.receiptJob.groupBy)
       .mockResolvedValueOnce([{ status: "COMPLETED", _count: { id: 1 } }] as never)
@@ -49,7 +63,8 @@ describe("receipt stats API", () => {
       _count: { id: 0 },
     } as never);
 
-    const response = await GET();
+    const request = new NextRequest("http://localhost:3000/api/receipts/stats");
+    const response = await GET(request);
     expect(response.status).toBe(200);
 
     for (const call of vi.mocked(prisma.receiptJob.groupBy).mock.calls) {
