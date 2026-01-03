@@ -13,7 +13,7 @@ A tax awareness app that helps people track taxes, scan receipts with AI, and di
 - **Receipt Scanning**: Upload receipts for automatic OCR + LLM extraction
 - **Smart Categorization**: GPT-4 auto-categorizes expenses (Meals, Travel, Office, etc.)
 - **Deductible Detection**: AI flags potentially deductible business expenses
-- **AI Insights**: Quiet Leaks, Tax Drag, and Spending Spikes detection
+- **AI Insights**: Quiet Leaks, Tax Drag, Spending Spikes, Duplicate Detection, and Deduction Opportunities
 
 ## Tech Stack
 
@@ -73,6 +73,13 @@ INSIGHT_CACHE_TTL_HOURS="6"
 
 # Required for LLM-powered receipt extraction
 OPENAI_API_KEY="sk-proj-..."
+
+# Optional: Protect cron endpoints (receipt worker + cache cleanup)
+CRON_SECRET="your-cron-secret"
+
+# Optional: Admin access for manual receipt processing trigger
+ADMIN_EMAILS="admin@example.com"
+ADMIN_USER_IDS="user_cuid_1,user_cuid_2"
 ```
 
 4. Run database migrations:
@@ -165,6 +172,12 @@ src/
 - `POST /api/templates` - Create a template
 - `PUT /api/templates/[id]` - Update a template
 - `DELETE /api/templates/[id]` - Delete a template
+
+### Export
+
+- `GET /api/export?year=2024` - Download ZIP with CSV summary and receipts (when available)
+- `GET /api/export?ids=id1,id2&format=csv` - Download CSV for selected transactions
+- `GET /api/export?format=csv&from=YYYY-MM-DD&to=YYYY-MM-DD&type=SALES_TAX` - Download filtered CSV (use `format=json` for JSON)
 
 ## Database Schema
 
