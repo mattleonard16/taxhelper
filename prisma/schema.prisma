@@ -27,6 +27,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -35,6 +36,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -217,6 +220,7 @@ model ReceiptJob {
   mimeType      String
   fileSize      Int
   storagePath   String            // Where the file is stored
+  transactionType TransactionType @default(OTHER)
   ocrText       String?           // Pre-extracted OCR text if available
   ocrConfidence Float?
   
