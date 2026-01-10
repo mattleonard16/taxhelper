@@ -16,6 +16,13 @@ vi.mock('@/lib/api-utils', () => ({
     },
     getRequestId: () => 'test-request-id',
     attachRequestId: (res: Response) => res,
+    parseSearchParams: (searchParams: URLSearchParams) => {
+        const params: Record<string, string> = {};
+        searchParams.forEach((value, key) => {
+            params[key] = value;
+        });
+        return params;
+    },
 }));
 
 vi.mock('@/lib/rate-limit', () => ({
@@ -119,6 +126,70 @@ describe('Export API', () => {
         expect(response.status).toBe(200);
         expect(response.headers.get('Content-Type')).toBe('application/zip');
         expect(response.headers.get('Content-Disposition')).toContain('TaxHelper-2024-Export.zip');
+    });
+
+    it('should return CSV file when ids are provided', async () => {
+        const { getAuthUser } = await import('@/lib/api-utils');
+        vi.mocked(getAuthUser).mockResolvedValue({ id: 'user-1', email: 'test@test.com', name: 'Test' });
+
+        const { prisma } = await import('@/lib/prisma');
+        vi.mocked(prisma.transaction.findMany).mockResolvedValue([
+            {
+                id: '1',
+                userId: 'user-1',
+                date: new Date('2024-01-15'),
+                type: 'SALES_TAX',
+                merchant: 'Walmart',
+                description: 'Groceries',
+                totalAmount: { toString: () => '50.00' },
+                taxAmount: { toString: () => '4.13' },
+                currency: 'USD',
+                receiptPath: null,
+                receiptName: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        ] as never);
+
+        const request = new NextRequest('http://localhost:3000/api/export?ids=1,2&format=csv');
+
+        const response = await GET(request);
+        expect(response.status).toBe(200);
+        expect(response.headers.get('Content-Type')).toContain('text/csv');
+        expect(response.headers.get('Content-Disposition')).toContain('TaxHelper-Selected-');
+
+        const body = await response.text();
+        expect(body).toContain('Date,Vendor,Description,Amount,Category,Tax Amount');
+    });
+
+    it('should return CSV when format=csv is provided', async () => {
+        const { getAuthUser } = await import('@/lib/api-utils');
+        vi.mocked(getAuthUser).mockResolvedValue({ id: 'user-1', email: 'test@test.com', name: 'Test' });
+
+        const { prisma } = await import('@/lib/prisma');
+        vi.mocked(prisma.transaction.findMany).mockResolvedValue([
+            {
+                id: '1',
+                userId: 'user-1',
+                date: new Date('2024-01-15'),
+                type: 'SALES_TAX',
+                merchant: 'Walmart',
+                description: 'Groceries',
+                totalAmount: { toString: () => '50.00' },
+                taxAmount: { toString: () => '4.13' },
+                currency: 'USD',
+                receiptPath: null,
+                receiptName: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        ] as never);
+
+        const request = new NextRequest('http://localhost:3000/api/export?format=csv&from=2024-01-01&to=2024-12-31&type=SALES_TAX');
+
+        const response = await GET(request);
+        expect(response.status).toBe(200);
+        expect(response.headers.get('Content-Type')).toContain('text/csv');
     });
 
     it('should include summary when includeSummary=true', async () => {

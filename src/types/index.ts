@@ -42,6 +42,11 @@ export interface Summary {
     INCOME_TAX: string;
     OTHER: string;
   };
+  byTypeTotals: {
+    SALES_TAX: string;
+    INCOME_TAX: string;
+    OTHER: string;
+  };
   timeseries: TimeseriesPoint[];
   topMerchants: MerchantTotal[];
   transactionCount: number;

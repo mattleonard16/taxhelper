@@ -71,7 +71,7 @@ describe('env', () => {
 
         it('should warn when Google OAuth is missing outside test', () => {
             const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-            process.env.NODE_ENV = 'development';
+            (process.env as Record<string, string | undefined>).NODE_ENV = 'development';
             process.env.DATABASE_URL = 'postgresql://localhost/test';
             process.env.NEXTAUTH_URL = 'http://localhost:3000';
             process.env.NEXTAUTH_SECRET = 'test-secret';

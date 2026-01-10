@@ -69,6 +69,11 @@ export function validateEnv(): EnvConfig {
         warnings.push('Google OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable Google sign-in.');
     }
 
+    // Warn about missing OpenAI API key (required for receipt extraction)
+    if (!process.env.OPENAI_API_KEY) {
+        warnings.push('OPENAI_API_KEY not set. Receipt extraction will fail.');
+    }
+
     // Log warnings in non-test environments
     if (warnings.length > 0 && process.env.NODE_ENV !== 'test') {
         warnings.forEach(w => console.warn(`[env] ${w}`));

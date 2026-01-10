@@ -77,6 +77,7 @@ export async function GET(request: NextRequest) {
         where,
         _sum: {
           taxAmount: true,
+          totalAmount: true,
         },
       }),
       // Group by merchant for top merchants (database-level aggregation)
@@ -122,8 +123,14 @@ export async function GET(request: NextRequest) {
       INCOME_TAX: new Prisma.Decimal(0),
       OTHER: new Prisma.Decimal(0),
     };
+    const byTypeTotals: Record<string, Prisma.Decimal> = {
+      SALES_TAX: new Prisma.Decimal(0),
+      INCOME_TAX: new Prisma.Decimal(0),
+      OTHER: new Prisma.Decimal(0),
+    };
     for (const item of byTypeRaw) {
       byType[item.type] = item._sum.taxAmount || new Prisma.Decimal(0);
+      byTypeTotals[item.type] = item._sum.totalAmount || new Prisma.Decimal(0);
     }
 
     // Process merchant aggregations (already sorted and limited by database)
@@ -173,6 +180,11 @@ export async function GET(request: NextRequest) {
         SALES_TAX: byType.SALES_TAX.toString(),
         INCOME_TAX: byType.INCOME_TAX.toString(),
         OTHER: byType.OTHER.toString(),
+      },
+      byTypeTotals: {
+        SALES_TAX: byTypeTotals.SALES_TAX.toString(),
+        INCOME_TAX: byTypeTotals.INCOME_TAX.toString(),
+        OTHER: byTypeTotals.OTHER.toString(),
       },
       timeseries,
       topMerchants,

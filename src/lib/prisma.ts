@@ -13,8 +13,14 @@ const globalForPrisma = globalThis as unknown as {
   envValidated: boolean | undefined;
 };
 
-// Validate environment variables once at startup
-if (!globalForPrisma.envValidated) {
+// Check if we're in a build phase (Next.js build, Vercel build, etc.)
+// During build, env vars may not be available yet - they're injected at runtime
+const isBuildPhase = 
+  process.env.NEXT_PHASE === "phase-production-build" ||
+  process.env.VERCEL_ENV === undefined && process.env.CI === "true";
+
+// Validate environment variables once at startup (skip during build)
+if (!globalForPrisma.envValidated && !isBuildPhase) {
   try {
     validateEnv();
     globalForPrisma.envValidated = true;

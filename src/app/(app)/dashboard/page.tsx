@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { SummaryCards } from "@/components/dashboard/summary-cards";
@@ -10,32 +10,25 @@ import { TopMerchants } from "@/components/dashboard/top-merchants";
 import { DailyTaxInsights } from "@/components/dashboard/daily-tax-insights";
 import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
 import { ReceiptOrchestrationStats } from "@/components/dashboard/receipt-orchestration-stats";
-import { CategoryBreakdownChart, CategoryData } from "@/components/dashboard/category-breakdown-chart";
+import { CategoryBreakdownChart } from "@/components/dashboard/category-breakdown-chart";
 import { DeductibleSummary } from "@/components/dashboard/deductible-summary";
+import { BalanceCard } from "@/components/dashboard/balance-card";
 import { TransactionForm } from "@/components/transactions/transaction-form";
 import { TransactionList } from "@/components/transactions/transaction-list";
-import { getDateRanges } from "@/lib/format";
 import { toast } from "sonner";
-import { Summary, Transaction } from "@/types";
+import { Transaction } from "@/types";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 
 export default function DashboardPage() {
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, loading, refresh } = useDashboardData();
   const [formOpen, setFormOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [receiptStats, setReceiptStats] = useState<{
-    receipts: { total: number; processed: number; pending: number; failed: number };
-    tax: { totalPaid: string; totalSpent: string; transactionCount: number };
-    deductions: { total: string; count: number };
-    categories: CategoryData[];
-    avgConfidence: number | null;
-  } | null>(null);
+  const { summary, transactions, receiptStats } = data;
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -54,40 +47,6 @@ export default function DashboardPage() {
       }
     },
   });
-
-  const fetchData = useCallback(async () => {
-    try {
-      await fetch("/api/recurring/generate", { method: "POST" }).catch(() => { });
-
-      const { thisYear } = getDateRanges();
-      const [summaryRes, transactionsRes] = await Promise.all([
-        fetch(`/api/summary?from=${thisYear.from}&to=${thisYear.to}`),
-        fetch(`/api/transactions?limit=5`),
-      ]);
-
-      if (summaryRes.ok) {
-        setSummary(await summaryRes.json());
-      }
-      if (transactionsRes.ok) {
-        const data = await transactionsRes.json();
-        setTransactions(data.transactions);
-      }
-
-      // Fetch receipt orchestration stats
-      const receiptStatsRes = await fetch("/api/receipts/stats");
-      if (receiptStatsRes.ok) {
-        setReceiptStats(await receiptStatsRes.json());
-      }
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   const handleEdit = (transaction: Transaction) => {
     setEditingTransaction(transaction);
@@ -109,7 +68,7 @@ export default function DashboardPage() {
 
       if (response.ok) {
         toast.success("Transaction deleted");
-        fetchData();
+        refresh();
       } else {
         toast.error("Failed to delete transaction");
       }
@@ -164,13 +123,13 @@ export default function DashboardPage() {
       </Button>
 
       {/* Onboarding Checklist */}
-      <OnboardingChecklist
-        onAddTransaction={() => {
-          setEditingTransaction(null);
-          setFormOpen(true);
-        }}
-        onRefreshData={fetchData}
-      />
+        <OnboardingChecklist
+          onAddTransaction={() => {
+            setEditingTransaction(null);
+            setFormOpen(true);
+          }}
+        onRefreshData={refresh}
+        />
 
       {summary && (
         <>
@@ -213,7 +172,7 @@ export default function DashboardPage() {
 
               <div className="grid gap-6 md:grid-cols-2">
                 <CategoryBreakdownChart categories={receiptStats.categories} />
-                <div /> {/* Placeholder for balance */}
+                <BalanceCard totals={summary.byTypeTotals} />
               </div>
             </>
           )}
@@ -237,7 +196,7 @@ export default function DashboardPage() {
       <TransactionForm
         open={formOpen}
         onOpenChange={handleFormClose}
-        onSuccess={fetchData}
+        onSuccess={refresh}
         transaction={editingTransaction}
       />
 

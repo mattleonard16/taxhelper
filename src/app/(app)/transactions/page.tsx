@@ -403,7 +403,7 @@ export default function TransactionsPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40" aria-label="Type">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -459,7 +459,7 @@ export default function TransactionsPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40" aria-label="Category">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
