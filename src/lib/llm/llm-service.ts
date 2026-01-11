@@ -8,6 +8,7 @@
  */
 
 import OpenAI from "openai";
+import { LLM_CATEGORY_PROMPT, LLM_VALID_CATEGORY_CODES } from "@/lib/categories";
 
 // Lazy initialization to avoid errors when API key is not set
 let openaiClient: OpenAI | null = null;
@@ -58,19 +59,14 @@ Output schema:
   "total": number or null,
   "currency": "USD",
   "paymentMethod": "visa|mastercard|amex|cash|debit|null",
-  "category": "Meals & Entertainment|Travel|Office Supplies|Utilities|Professional Services|Other",
-  "categoryCode": "MEALS|TRAVEL|OFFICE|UTILITIES|SERVICES|OTHER",
+  "category": "Meals & Entertainment|Travel|Office Supplies|Utilities|Professional Services|Software & Subscriptions|Groceries|Healthcare|Other",
+  "categoryCode": "${LLM_VALID_CATEGORY_CODES.join('|')}",
   "isDeductible": boolean,
   "confidence": 0.0 to 1.0,
   "lineItems": [{"description": "", "quantity": 1, "unitPrice": null, "total": null}]
 }
 
-Category hints:
-- Restaurants, coffee shops, food delivery → Meals & Entertainment (potentially deductible for business)
-- Gas, parking, rideshare, hotels, flights → Travel
-- Supplies, electronics, furniture → Office Supplies
-- Internet, phone, utilities → Utilities
-- Consulting, legal, accounting → Professional Services`;
+${LLM_CATEGORY_PROMPT}`;
 
 /**
  * Extract structured data from receipt text using GPT-4

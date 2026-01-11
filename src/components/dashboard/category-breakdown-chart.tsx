@@ -4,6 +4,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/format";
 import { useCurrency } from "@/hooks/use-user-settings";
+import { getCategoryColor, DEFAULT_CATEGORY_COLOR } from "@/lib/categories";
 
 export interface CategoryData {
   category: string;
@@ -16,18 +17,7 @@ interface CategoryBreakdownChartProps {
   categories: CategoryData[];
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  MEALS: "oklch(0.7 0.18 45)",      // Orange
-  TRAVEL: "oklch(0.6 0.2 270)",     // Purple
-  OFFICE: "oklch(0.65 0.22 150)",   // Green
-  UTILITIES: "oklch(0.65 0.18 220)", // Blue
-  SERVICES: "oklch(0.6 0.2 330)",   // Pink
-  GROCERIES: "oklch(0.7 0.2 100)",  // Yellow-green
-  HEALTHCARE: "oklch(0.6 0.22 0)",  // Red
-  OTHER: "oklch(0.6 0.1 250)",      // Gray-blue
-};
-
-const DEFAULT_COLOR = "oklch(0.6 0.1 250)";
+const DEFAULT_COLOR = DEFAULT_CATEGORY_COLOR;
 
 export function formatCategoryPercent(value: number, total: number): string {
   if (!Number.isFinite(total) || total <= 0) {
@@ -79,7 +69,7 @@ export function CategoryBreakdownChart({ categories }: CategoryBreakdownChartPro
                   {chartData.map((item) => (
                     <Cell 
                       key={`cell-${item.code}`} 
-                      fill={CATEGORY_COLORS[item.code] || DEFAULT_COLOR} 
+                      fill={getCategoryColor(item.code)} 
                     />
                   ))}
                 </Pie>
@@ -109,7 +99,7 @@ export function CategoryBreakdownChart({ categories }: CategoryBreakdownChartPro
                 <div key={item.code} className="flex items-center gap-3">
                   <div
                     className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: CATEGORY_COLORS[item.code] || DEFAULT_COLOR }}
+                    style={{ backgroundColor: getCategoryColor(item.code) }}
                   />
                   <div>
                     <p className="text-sm font-medium">{item.name}</p>

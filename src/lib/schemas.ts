@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod';
+import { CATEGORY_CODES } from './categories';
 
 // Transaction type enum matching Prisma
 export const TransactionTypeSchema = z.enum(['SALES_TAX', 'INCOME_TAX', 'OTHER']);
@@ -82,9 +83,9 @@ const coerceNumberOrUndefined = z.preprocess((val) => {
     return num;
 }, z.number().nonnegative().optional());
 
-// Valid category codes
-export const VALID_CATEGORY_CODES = ['MEALS', 'TRAVEL', 'OFFICE', 'UTILITIES', 'SOFTWARE', 'PROFESSIONAL', 'OTHER'] as const;
-export const CategoryCodeSchema = z.enum(VALID_CATEGORY_CODES);
+// Valid category codes - imported from centralized categories.ts
+export const VALID_CATEGORY_CODES = CATEGORY_CODES;
+export const CategoryCodeSchema = z.enum(CATEGORY_CODES);
 
 // Query params for transactions list - accepts YYYY-MM-DD
 export const transactionQuerySchema = z.object({

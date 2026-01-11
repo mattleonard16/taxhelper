@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { X, Trash2, Tag, CheckCircle, XCircle, Download } from "lucide-react";
+import { UI_CATEGORY_OPTIONS } from "@/lib/categories";
 
 interface BulkActionsBarProps {
   selectedIds: string[];
@@ -18,15 +19,7 @@ interface BulkActionsBarProps {
   onActionComplete: () => void;
 }
 
-const CATEGORIES = [
-  { code: "MEALS", label: "Meals & Entertainment" },
-  { code: "TRAVEL", label: "Travel" },
-  { code: "OFFICE", label: "Office Supplies" },
-  { code: "UTILITIES", label: "Utilities" },
-  { code: "SOFTWARE", label: "Software & Subscriptions" },
-  { code: "PROFESSIONAL", label: "Professional Services" },
-  { code: "OTHER", label: "Other" },
-];
+const CATEGORIES = UI_CATEGORY_OPTIONS;
 
 export function BulkActionsBar({
   selectedIds,

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
+import { CATEGORY_CODES } from "@/lib/categories";
 
-const VALID_CATEGORY_CODES = ["MEALS", "TRAVEL", "OFFICE", "UTILITIES", "SOFTWARE", "PROFESSIONAL", "OTHER"] as const;
+const VALID_CATEGORY_CODES = CATEGORY_CODES;
 
 const uniqueIds = z.array(z.string().min(1)).min(1).max(100).refine(
   (ids) => new Set(ids).size === ids.length,

@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import type { TransactionFilters } from "@/hooks/use-persisted-filters";
+import { getCategoryLabel } from "@/lib/categories";
 
 interface FilterChipsProps {
   filters: TransactionFilters;
@@ -12,16 +13,6 @@ interface FilterChipsProps {
 const TYPE_LABELS: Record<string, string> = {
   SALES_TAX: "Sales Tax",
   INCOME_TAX: "Income Tax",
-  OTHER: "Other",
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  MEALS: "Meals & Entertainment",
-  TRAVEL: "Travel",
-  OFFICE: "Office Supplies",
-  UTILITIES: "Utilities",
-  SOFTWARE: "Software & Subscriptions",
-  PROFESSIONAL: "Professional Services",
   OTHER: "Other",
 };
 
@@ -53,7 +44,7 @@ export function FilterChips({ filters, onRemove }: FilterChipsProps) {
   if (filters.category !== "all") {
     chips.push({
       key: "category",
-      label: `Category: ${CATEGORY_LABELS[filters.category] || filters.category}`,
+      label: `Category: ${getCategoryLabel(filters.category)}`,
       defaultValue: "all"
     });
   }

@@ -72,6 +72,33 @@ NEXT_PUBLIC_DEV_LOGIN_PASSWORD="devmode123"
 - **Expenses**: Sum of `SALES_TAX` + `OTHER` transactions
 - **Balance**: Income - Expenses (green positive, red negative)
 
+## Category Codes
+
+Centralized in `src/lib/categories.ts` - single source of truth for all category-related constants.
+
+**Valid Category Codes:**
+| Code | Label | Description |
+|------|-------|-------------|
+| `MEALS` | Meals & Entertainment | Restaurants, coffee shops, food delivery, bars |
+| `TRAVEL` | Travel | Gas, parking, rideshare, hotels, flights, tolls |
+| `OFFICE` | Office Supplies | Supplies, electronics, furniture |
+| `UTILITIES` | Utilities | Internet, phone, electricity, water |
+| `SERVICES` | Professional Services | Consulting, legal, accounting |
+| `PROFESSIONAL` | Professional Services | Legacy code (same as SERVICES) |
+| `SOFTWARE` | Software & Subscriptions | SaaS, apps, subscriptions |
+| `GROCERIES` | Groceries | Supermarkets, food stores |
+| `HEALTHCARE` | Healthcare | Pharmacy, medical supplies, doctor visits |
+| `OTHER` | Other | Anything else |
+
+**Key Exports from `src/lib/categories.ts`:**
+- `CATEGORY_CODES` - Array of all valid codes
+- `CATEGORY_LABELS` - Code to label mapping
+- `CATEGORY_COLORS` - Code to chart color mapping
+- `UI_CATEGORY_OPTIONS` - Array for UI dropdowns (no duplicates)
+- `LLM_CATEGORY_PROMPT` - Category prompt for LLM extraction
+- `getCategoryLabel(code)` - Helper to get label with fallback
+- `getCategoryColor(code)` - Helper to get color with fallback
+
 ## TODO
 - Type safety: centralize API response types (e.g., `src/types/api.ts`) and normalize money typing.
 

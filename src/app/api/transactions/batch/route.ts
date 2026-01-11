@@ -10,8 +10,7 @@ import { getAuthUser, ApiErrors, getRequestId, attachRequestId } from "@/lib/api
 import { checkRateLimit, RateLimitConfig, rateLimitedResponse } from "@/lib/rate-limit";
 import { logger, operationLogger, startTimer } from "@/lib/logger";
 import { z } from "zod";
-
-const VALID_CATEGORY_CODES = ["MEALS", "TRAVEL", "OFFICE", "UTILITIES", "SOFTWARE", "PROFESSIONAL", "OTHER"] as const;
+import { CATEGORY_CODES } from "@/lib/categories";
 
 // Unique array refinement - reject duplicate IDs
 const uniqueIds = z.array(z.string().min(1)).min(1).max(100).refine(
@@ -23,7 +22,7 @@ const batchUpdateSchema = z.object({
   ids: uniqueIds,
   updates: z.object({
     category: z.string().max(100).optional(),
-    categoryCode: z.enum(VALID_CATEGORY_CODES).optional(),
+    categoryCode: z.enum(CATEGORY_CODES).optional(),
     isDeductible: z.boolean().optional(),
     type: z.enum(["SALES_TAX", "INCOME_TAX", "OTHER"]).optional(),
   }).refine(

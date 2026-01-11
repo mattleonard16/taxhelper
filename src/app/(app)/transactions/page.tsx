@@ -30,6 +30,7 @@ import { useDebouncedValue } from "@/hooks/use-debounce";
 import { usePersistedFilters } from "@/hooks/use-persisted-filters";
 import { FilterChips } from "@/components/transactions/filter-chips";
 import { BulkActionsBar } from "@/components/transactions/bulk-actions-bar";
+import { UI_CATEGORY_OPTIONS } from "@/lib/categories";
 
 function parseIds(value: string): string[] {
   if (!value) return [];
@@ -464,13 +465,9 @@ export default function TransactionsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="MEALS">Meals</SelectItem>
-                <SelectItem value="TRAVEL">Travel</SelectItem>
-                <SelectItem value="OFFICE">Office</SelectItem>
-                <SelectItem value="UTILITIES">Utilities</SelectItem>
-                <SelectItem value="SOFTWARE">Software</SelectItem>
-                <SelectItem value="PROFESSIONAL">Professional</SelectItem>
-                <SelectItem value="OTHER">Other</SelectItem>
+                {UI_CATEGORY_OPTIONS.map((cat) => (
+                  <SelectItem key={cat.code} value={cat.code}>{cat.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

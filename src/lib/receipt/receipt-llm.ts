@@ -11,6 +11,7 @@ import { checkAndRecordUsage, checkBudgetBeforeCall } from '@/lib/llm/cost-track
 import { enforceRateLimit } from '@/lib/llm/rate-limiter';
 import { getCachedExtraction, cacheExtraction } from './receipt-cache';
 import { LLMProviderError, LLMParsingError, LLMRateLimitError } from '@/lib/llm/errors';
+import { LLM_CATEGORY_PROMPT } from '@/lib/categories';
 
 type LLMProvider = 'anthropic' | 'openai';
 
@@ -32,15 +33,7 @@ const RECEIPT_PROMPT = [
     '- use null when values are missing.',
     '- confidence must be between 0 and 1 and reflect overall certainty.',
     '',
-    'Category Classification (pick one):',
-    '- "Meals & Entertainment" (categoryCode: "MEALS") - restaurants, coffee shops, food delivery, bars',
-    '- "Travel" (categoryCode: "TRAVEL") - gas, parking, rideshare, hotels, flights, tolls',
-    '- "Office Supplies" (categoryCode: "OFFICE") - supplies, electronics, furniture, software',
-    '- "Utilities" (categoryCode: "UTILITIES") - internet, phone, electricity, water',
-    '- "Professional Services" (categoryCode: "SERVICES") - consulting, legal, accounting',
-    '- "Groceries" (categoryCode: "GROCERIES") - supermarkets, food stores',
-    '- "Healthcare" (categoryCode: "HEALTHCARE") - pharmacy, medical supplies, doctor visits',
-    '- "Other" (categoryCode: "OTHER") - anything else',
+    LLM_CATEGORY_PROMPT,
     '',
     'Deductibility Rules (set isDeductible: true/false):',
     '- Business meals (50% deductible) → true',
