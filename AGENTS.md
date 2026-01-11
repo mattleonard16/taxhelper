@@ -24,6 +24,54 @@
 - `src/lib/` - Prisma client, auth config, insights generators, receipt processing
 - `prisma/schema.prisma` - Database schema; migrations in `prisma/migrations/`
 
+## Authentication
+
+### Dev Login (Development Only)
+For local development and E2E testing, a "Dev Login" button enables quick authentication without OAuth/email setup.
+
+**Required Environment Variables:**
+```env
+ENABLE_DEV_LOGIN=true
+DEV_LOGIN_EMAIL="dev@taxhelper.app"
+DEV_LOGIN_PASSWORD="devmode123"
+NEXT_PUBLIC_ENABLE_DEV_LOGIN=true
+NEXT_PUBLIC_DEV_LOGIN_EMAIL="dev@taxhelper.app"
+NEXT_PUBLIC_DEV_LOGIN_PASSWORD="devmode123"
+```
+
+**Behavior:**
+- Button only visible when `NEXT_PUBLIC_ENABLE_DEV_LOGIN=true` AND `NODE_ENV !== 'production'`
+- Auto-creates dev user in database on first login
+- Respects `callbackUrl` for post-login redirects
+- Protected against external URL redirects
+
+**Key Files:**
+- `src/app/auth/signin/page.tsx` - UI with Dev Login button
+- `src/lib/auth.ts` - NextAuth config with dev credentials handling
+
+### Production Auth
+- Email/password credentials (bcrypt hashed)
+- Optional Google OAuth (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`)
+- Optional email magic links (`EMAIL_SERVER`, `EMAIL_FROM`)
+- Rate limiting on auth attempts (`@/lib/rate-limit`)
+
+## Export API
+
+`GET /api/export` supports multiple export formats:
+
+| Use Case | Parameters | Response |
+|----------|------------|----------|
+| Year ZIP | `?year=2024` | ZIP with CSV + receipts |
+| Selected IDs | `?ids=id1,id2&format=csv` | CSV file |
+| Filtered | `?format=csv&from=YYYY-MM-DD&to=YYYY-MM-DD&type=SALES_TAX` | CSV or JSON |
+
+## Dashboard Balance Card
+
+`src/components/dashboard/balance-card.tsx` displays:
+- **Income**: Sum of `INCOME_TAX` transactions
+- **Expenses**: Sum of `SALES_TAX` + `OTHER` transactions
+- **Balance**: Income - Expenses (green positive, red negative)
+
 ## TODO
 - Type safety: centralize API response types (e.g., `src/types/api.ts`) and normalize money typing.
 
