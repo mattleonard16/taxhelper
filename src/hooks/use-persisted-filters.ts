@@ -11,6 +11,7 @@ export interface TransactionFilters {
   maxAmount: string;
   category: string;
   isDeductible: string; // "all" | "true" | "false"
+  priority: string; // "all" | "HIGH" | "MEDIUM" | "LOW"
 }
 
 const STORAGE_KEY = "taxhelper:transaction-filters";
@@ -24,6 +25,7 @@ const defaultFilters: TransactionFilters = {
   maxAmount: "",
   category: "all",
   isDeductible: "all",
+  priority: "all",
 };
 
 function loadFiltersFromStorage(): TransactionFilters {
@@ -73,7 +75,8 @@ export function usePersistedFilters() {
     filters.minAmount !== "" ||
     filters.maxAmount !== "" ||
     filters.category !== "all" ||
-    filters.isDeductible !== "all";
+    filters.isDeductible !== "all" ||
+    filters.priority !== "all";
 
   return {
     filters,

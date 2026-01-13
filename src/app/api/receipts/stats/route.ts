@@ -22,34 +22,36 @@ export async function GET(request: NextRequest) {
 
         const startOfYear = new Date(new Date().getFullYear(), 0, 1);
 
-        // Get receipt job stats, category breakdown, and tax stats
+        // Get receipt job stats (pipeline only), category/deductible from transactions (source of truth)
         const [receiptStats, categoryStats, deductibleStats, taxStats, avgConfidence] = await Promise.all([
+            // Receipt pipeline stats (still from ReceiptJob)
             prisma.receiptJob.groupBy({
                 by: ["status"],
                 where: { userId, discardedAt: null },
                 _count: { id: true },
             }),
-            prisma.receiptJob.groupBy({
+            // Category breakdown from confirmed transactions (source of truth)
+            prisma.transaction.groupBy({
                 by: ["category", "categoryCode"],
                 where: { 
                     userId, 
-                    status: "COMPLETED",
-                    category: { not: null },
-                    discardedAt: null,
+                    date: { gte: startOfYear },
+                    categoryCode: { not: null },
                 },
                 _sum: { totalAmount: true },
                 _count: { id: true },
             }),
-            prisma.receiptJob.aggregate({
+            // Deductible stats from confirmed transactions (source of truth)
+            prisma.transaction.aggregate({
                 where: { 
                     userId, 
-                    status: "COMPLETED",
+                    date: { gte: startOfYear },
                     isDeductible: true,
-                    discardedAt: null,
                 },
                 _sum: { totalAmount: true },
                 _count: { id: true },
             }),
+            // Tax stats from transactions
             prisma.transaction.aggregate({
                 where: {
                     userId,
@@ -61,10 +63,11 @@ export async function GET(request: NextRequest) {
                 },
                 _count: { id: true },
             }),
+            // Average confidence still from receipts (pipeline metric)
             prisma.receiptJob.aggregate({
                 where: { 
                     userId, 
-                    status: "COMPLETED",
+                    status: "CONFIRMED",
                     extractionConfidence: { not: null },
                     discardedAt: null,
                 },
@@ -92,11 +95,11 @@ export async function GET(request: NextRequest) {
         const deductibleTotal = deductibleStats._sum.totalAmount?.toNumber() || 0;
         const deductibleCount = deductibleStats._count.id || 0;
 
-        // Format category breakdown
+        // Format category breakdown from transactions
         const categories = categoryStats
-            .filter(cat => cat.category && cat.categoryCode)
+            .filter(cat => cat.categoryCode)
             .map(cat => ({
-                category: cat.category!,
+                category: cat.category || cat.categoryCode!,
                 categoryCode: cat.categoryCode!,
                 amount: cat._sum.totalAmount?.toNumber() || 0,
                 count: cat._count.id,

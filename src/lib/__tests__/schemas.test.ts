@@ -223,6 +223,7 @@ describe('schemas', () => {
                 type: '',
                 search: '',
                 category: '',
+                priority: '',
             });
 
             expect(result.success).toBe(true);
@@ -232,6 +233,18 @@ describe('schemas', () => {
                 expect(result.data.type).toBeUndefined();
                 expect(result.data.search).toBeUndefined();
                 expect(result.data.category).toBeUndefined();
+                expect(result.data.priority).toBeUndefined();
+            }
+        });
+
+        it('should parse valid priority', () => {
+            const result = transactionQuerySchema.safeParse({
+                priority: 'HIGH',
+            });
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.priority).toBe('HIGH');
             }
         });
 

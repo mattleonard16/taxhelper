@@ -19,22 +19,14 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { Template } from "@/types";
+import { Template, Transaction } from "@/types";
 import { ReceiptScanner } from "./receipt-scanner";
 
 interface TransactionFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  transaction?: {
-    id: string;
-    date: string;
-    type: string;
-    description: string | null;
-    merchant: string | null;
-    totalAmount: string;
-    taxAmount: string;
-  } | null;
+  transaction?: Transaction | null;
 }
 
 export function TransactionForm({
@@ -51,6 +43,7 @@ export function TransactionForm({
   const [description, setDescription] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
   const [taxAmount, setTaxAmount] = useState("");
+  const [priority, setPriority] = useState("MEDIUM");
   const [taxRate, setTaxRate] = useState("");
   const [useRate, setUseRate] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -144,6 +137,7 @@ export function TransactionForm({
       setDescription(transaction.description || "");
       setTotalAmount(transaction.totalAmount);
       setTaxAmount(transaction.taxAmount);
+      setPriority(transaction.priority ?? "MEDIUM");
       setTaxRate("");
       setUseRate(false);
     } else {
@@ -153,6 +147,7 @@ export function TransactionForm({
       setDescription("");
       setTotalAmount("");
       setTaxAmount("");
+      setPriority("MEDIUM");
       setTaxRate("");
       setUseRate(false);
     }
@@ -184,13 +179,14 @@ export function TransactionForm({
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date,
-          type,
-          description: description || null,
-          merchant: merchant || null,
-          totalAmount: parseFloat(totalAmount),
-          taxAmount: parseFloat(taxAmount),
-        }),
+            date,
+            type,
+            description: description || null,
+            merchant: merchant || null,
+            totalAmount: parseFloat(totalAmount),
+            taxAmount: parseFloat(taxAmount),
+            priority,
+          }),
       });
 
       if (!response.ok) {

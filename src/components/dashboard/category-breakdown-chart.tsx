@@ -1,10 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
 import { useCurrency } from "@/hooks/use-user-settings";
-import { getCategoryColor, DEFAULT_CATEGORY_COLOR } from "@/lib/categories";
+import { getCategoryColor } from "@/lib/categories";
+import { ArrowRight } from "lucide-react";
 
 export interface CategoryData {
   category: string;
@@ -16,8 +19,6 @@ export interface CategoryData {
 interface CategoryBreakdownChartProps {
   categories: CategoryData[];
 }
-
-const DEFAULT_COLOR = DEFAULT_CATEGORY_COLOR;
 
 export function formatCategoryPercent(value: number, total: number): string {
   if (!Number.isFinite(total) || total <= 0) {
@@ -44,8 +45,13 @@ export function CategoryBreakdownChart({ categories }: CategoryBreakdownChartPro
 
   return (
     <Card className="border-0 bg-card/50 shadow-lg backdrop-blur">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-semibold">Expenses by Category</CardTitle>
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/transactions">
+            View all <ArrowRight className="ml-1 h-4 w-4" />
+          </Link>
+        </Button>
       </CardHeader>
       <CardContent>
         {chartData.length === 0 ? (
@@ -96,7 +102,11 @@ export function CategoryBreakdownChart({ categories }: CategoryBreakdownChartPro
             </ResponsiveContainer>
             <div className="flex flex-wrap gap-4 lg:flex-col lg:gap-3">
               {chartData.slice(0, 6).map((item) => (
-                <div key={item.code} className="flex items-center gap-3">
+                <Link
+                  key={item.code}
+                  href={`/transactions?category=${encodeURIComponent(item.code)}`}
+                  className="flex items-center gap-3 rounded-lg p-1.5 -m-1.5 transition-colors hover:bg-muted/50"
+                >
                   <div
                     className="h-3 w-3 rounded-full"
                     style={{ backgroundColor: getCategoryColor(item.code) }}
@@ -107,7 +117,7 @@ export function CategoryBreakdownChart({ categories }: CategoryBreakdownChartPro
                       {formatCurrency(item.value, userCurrency)}
                     </p>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

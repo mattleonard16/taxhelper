@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
 import { useCurrency } from "@/hooks/use-user-settings";
-import { Receipt, FileCheck, AlertCircle } from "lucide-react";
+import { Receipt, FileCheck, AlertCircle, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ReceiptStatsProps {
@@ -61,9 +63,11 @@ export function ReceiptOrchestrationStats({
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Receipt Intelligence</h2>
-                <span className="text-sm text-muted-foreground">
-                    Powered by Agent Orchestration
-                </span>
+                <Button variant="ghost" size="sm" asChild>
+                    <Link href="/receipts">
+                        View inbox <ArrowRight className="ml-1 h-4 w-4" />
+                    </Link>
+                </Button>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                 {cards.map((card) => (

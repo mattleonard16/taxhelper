@@ -58,7 +58,7 @@ describe("Transactions API - Priority Field", () => {
     ({ GET, POST } = await import("@/app/api/transactions/route"));
     const { prisma } = await import("@/lib/prisma");
     const { getAuthUser } = await import("@/lib/api-utils");
-    prismaTransaction = prisma.transaction;
+    prismaTransaction = prisma.transaction as unknown as typeof prismaTransaction;
     
     getAuthUserMock = vi.mocked(getAuthUser);
     testUser = {
@@ -191,69 +191,85 @@ describe("Transactions API - Priority Field", () => {
   });
 
   describe("GET /api/transactions", () => {
-    it("should return transactions with priority field", async () => {
-      // Mock transactions with different priorities
-      prismaTransaction.findMany.mockReturnValue([
-        {
-          id: "txn-1",
-          userId: testUser.id,
-          date: new Date("2024-01-15"),
-          type: "OTHER",
-          description: "High priority",
-          merchant: "Merchant A",
-          totalAmount: 100,
-          taxAmount: 10,
-          currency: "USD",
-          priority: "HIGH",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: "txn-2",
-          userId: testUser.id,
-          date: new Date("2024-01-16"),
-          type: "OTHER",
-          description: "Medium priority",
-          merchant: "Merchant B",
-          totalAmount: 50,
-          taxAmount: 5,
-          currency: "USD",
-          priority: "MEDIUM",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: "txn-3",
-          userId: testUser.id,
-          date: new Date("2024-01-17"),
-          type: "OTHER",
-          description: "Low priority",
-          merchant: "Merchant C",
-          totalAmount: 25,
-          taxAmount: 2.5,
-          currency: "USD",
-          priority: "LOW",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ]);
-      prismaTransaction.count.mockReturnValue(3);
+     it("should return transactions with priority field", async () => {
+       // Mock transactions with different priorities
+       prismaTransaction.findMany.mockReturnValue([
+         {
+           id: "txn-1",
+           userId: testUser.id,
+           date: new Date("2024-01-15"),
+           type: "OTHER",
+           description: "High priority",
+           merchant: "Merchant A",
+           totalAmount: 100,
+           taxAmount: 10,
+           currency: "USD",
+           priority: "HIGH",
+           createdAt: new Date(),
+           updatedAt: new Date(),
+         },
+         {
+           id: "txn-2",
+           userId: testUser.id,
+           date: new Date("2024-01-16"),
+           type: "OTHER",
+           description: "Medium priority",
+           merchant: "Merchant B",
+           totalAmount: 50,
+           taxAmount: 5,
+           currency: "USD",
+           priority: "MEDIUM",
+           createdAt: new Date(),
+           updatedAt: new Date(),
+         },
+         {
+           id: "txn-3",
+           userId: testUser.id,
+           date: new Date("2024-01-17"),
+           type: "OTHER",
+           description: "Low priority",
+           merchant: "Merchant C",
+           totalAmount: 25,
+           taxAmount: 2.5,
+           currency: "USD",
+           priority: "LOW",
+           createdAt: new Date(),
+           updatedAt: new Date(),
+         },
+       ]);
+       prismaTransaction.count.mockReturnValue(3);
 
-      const request = new NextRequest("http://localhost:3000/api/transactions", {
-        method: "GET",
-      });
+       const request = new NextRequest("http://localhost:3000/api/transactions", {
+         method: "GET",
+       });
 
-      const response = await GET(request);
-      const data = await response.json();
+       const response = await GET(request);
+       const data = await response.json();
 
-      expect(response.status).toBe(200);
-      expect(data.transactions).toHaveLength(3);
-      expect(data.transactions.every((t: { priority: string }) => t.priority)).toBe(true);
-      
-      const priorities = data.transactions.map((t: { priority: string }) => t.priority);
-      expect(priorities).toContain("HIGH");
-      expect(priorities).toContain("MEDIUM");
-      expect(priorities).toContain("LOW");
-    });
-  });
+       expect(response.status).toBe(200);
+       expect(data.transactions).toHaveLength(3);
+       expect(data.transactions.every((t: { priority: string }) => t.priority)).toBe(true);
+
+       const priorities = data.transactions.map((t: { priority: string }) => t.priority);
+       expect(priorities).toContain("HIGH");
+       expect(priorities).toContain("MEDIUM");
+       expect(priorities).toContain("LOW");
+     });
+
+     it("should apply priority filter when provided", async () => {
+       prismaTransaction.findMany.mockReturnValue([]);
+       prismaTransaction.count.mockReturnValue(0);
+
+       const request = new NextRequest("http://localhost:3000/api/transactions?priority=HIGH", {
+         method: "GET",
+       });
+
+       const response = await GET(request);
+       expect(response.status).toBe(200);
+
+       expect(prismaTransaction.findMany).toHaveBeenCalledTimes(1);
+       const args = prismaTransaction.findMany.mock.calls[0]?.[0] as { where?: { priority?: string } };
+       expect(args.where?.priority).toBe("HIGH");
+     });
+   });
 });

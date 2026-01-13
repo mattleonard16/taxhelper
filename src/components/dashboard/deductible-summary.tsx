@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
 import { useCurrency } from "@/hooks/use-user-settings";
-import { BadgeCheck, TrendingUp, Receipt } from "lucide-react";
+import { BadgeCheck, TrendingUp, Receipt, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DeductibleSummaryProps {
@@ -57,8 +59,13 @@ export function DeductibleSummary({
 
   return (
     <Card className="border-0 bg-card/50 shadow-lg backdrop-blur">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-semibold">Deductible Tracking</CardTitle>
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/deductions">
+            View details <ArrowRight className="ml-1 h-4 w-4" />
+          </Link>
+        </Button>
       </CardHeader>
       <CardContent>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
