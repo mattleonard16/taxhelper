@@ -1,3 +1,19 @@
 # Ralph Progress Log
 Started: Mon Jan 12 17:30:19 PST 2026
 ---
+## [Mon Jan 13 01:31:00 PST 2026] - US-001
+- Added TransactionPriority enum with HIGH, MEDIUM, LOW values
+- Added priority field to Transaction model with default MEDIUM
+- Created migration SQL for adding priority column and indexes
+- Successfully generated Prisma client and types
+- Typecheck completed without errors
+- Test suite passed (1 pre-existing unrelated failure in summary.test.ts)
+
+**Learnings for future iterations:**
+- The project uses Prisma with PostgreSQL database
+- Migrations follow naming pattern: YYYYMMDDHHMMSS_descriptive_name
+- Database may not be locally connected during development - migrations can be created manually
+- Prisma client generation validates schema syntax
+- Always run typecheck (`npx tsc --noEmit`) and test suite before committing changes
+- Project uses composite indexes for common query patterns (userId with other fields)
+---
