@@ -2,9 +2,9 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/auth-utils";
 import { Button } from "@/components/ui/button";
-import { HeroElasticLine } from "@/components/landing/hero-elastic-line";
 import { FeaturesSection } from "@/components/landing/features-section";
 import { InteractiveDemo } from "@/components/landing/interactive-demo";
+import { ArrowRight, Receipt, TrendingUp, Search } from "lucide-react";
 
 export default async function HomePage() {
   const session = await getSession();
@@ -14,19 +14,17 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* Background gradient */}
+    <div className="relative min-h-dvh">
+      {/* Subtle grid background */}
       <div className="absolute inset-0 -z-10">
-        <div className="absolute left-1/4 top-0 h-[500px] w-[500px] rounded-full bg-primary/20 blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full bg-accent/20 blur-[100px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,oklch(0.2_0.02_280/0.1)_1px,transparent_1px),linear-gradient(to_bottom,oklch(0.2_0.02_280/0.1)_1px,transparent_1px)] bg-[size:64px_64px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,oklch(0.22_0.01_260/0.4)_1px,transparent_1px),linear-gradient(to_bottom,oklch(0.22_0.01_260/0.4)_1px,transparent_1px)] bg-[size:48px_48px]" />
       </div>
 
       {/* Header */}
-      <header className="border-b border-border/50 bg-background/50 backdrop-blur-xl">
+      <header className="border-b border-border/50 bg-background/95 sticky top-0 z-50">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-primary">
               <span className="text-lg font-bold text-primary-foreground">T</span>
             </div>
             <span className="text-xl font-bold tracking-tight">TaxHelper</span>
@@ -37,45 +35,105 @@ export default async function HomePage() {
         </div>
       </header>
 
-      {/* Hero */}
-      <main className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-secondary/50 px-4 py-1.5 text-sm backdrop-blur">
-            <span className="h-2 w-2 rounded-full bg-chart-1" />
-            Tax awareness made simple
+      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        {/* Bento Hero Grid */}
+        <section className="grid gap-4 lg:grid-cols-3 lg:grid-rows-2">
+          {/* Main Hero Card - spans 2 columns */}
+          <div className="lg:col-span-2 lg:row-span-2 rounded-3xl border border-border bg-card p-8 lg:p-12 flex flex-col justify-between">
+            <div>
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-1.5 text-sm text-muted-foreground">
+                <span className="size-2 rounded-full bg-primary" />
+                Tax awareness made simple
+              </div>
+
+              <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl">
+                See where your money{" "}
+                <span className="text-primary">
+                  actually goes
+                </span>{" "}
+                in tax
+              </h1>
+
+              <p className="mt-6 max-w-xl text-lg text-muted-foreground text-pretty">
+                Track every purchase and paycheck. Understand how much tax you pay daily,
+                monthly, and yearly. No filing, no advice—just awareness.
+              </p>
+            </div>
+
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+              <Button size="lg" className="h-12 px-8 text-lg" asChild>
+                <Link href="/auth/signin">
+                  Get Started Free
+                  <ArrowRight className="ml-2 size-5" />
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" className="h-12 px-8 text-lg" asChild>
+                <Link href="#features">Learn More</Link>
+              </Button>
+            </div>
           </div>
 
-          <h1 className="mx-auto max-w-4xl text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
-            See where your money{" "}
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              actually goes
-            </span>{" "}
-            in tax
-          </h1>
-
-          {/* Elastic Line */}
-          <div className="mx-auto max-w-2xl">
-            <HeroElasticLine />
+          {/* Stat Card 1 */}
+          <div className="rounded-3xl border border-border bg-card p-6 flex flex-col justify-between cursor-pointer">
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10">
+              <Receipt className="size-6 text-primary" />
+            </div>
+            <div className="mt-4">
+              <div className="text-3xl font-bold tabular-nums">$4,285</div>
+              <div className="text-sm text-muted-foreground">Average YTD tax tracked</div>
+            </div>
           </div>
 
-          <p className="mx-auto mt-2 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-            Track every purchase and paycheck. Understand how much tax you pay daily,
-            monthly, and yearly. No filing, no advice—just awareness.
-          </p>
-
-          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Button
-              size="lg"
-              className="h-12 px-8 text-lg bg-gradient-to-r from-primary to-accent shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30"
-              asChild
-            >
-              <Link href="/auth/signin">Get Started Free</Link>
-            </Button>
-            <Button size="lg" variant="outline" className="h-12 px-8 text-lg" asChild>
-              <Link href="#features">Learn More</Link>
-            </Button>
+          {/* Stat Card 2 */}
+          <div className="rounded-3xl border border-border bg-card p-6 flex flex-col justify-between cursor-pointer">
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10">
+              <TrendingUp className="size-6 text-primary" />
+            </div>
+            <div className="mt-4">
+              <div className="text-3xl font-bold tabular-nums">8.2%</div>
+              <div className="text-sm text-muted-foreground">Avg effective tax rate</div>
+            </div>
           </div>
-        </div>
+        </section>
+
+        {/* Feature Highlights - Bento Row */}
+        <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="rounded-2xl border border-border bg-card p-6 cursor-pointer">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+                <Receipt className="size-5 text-primary" />
+              </div>
+              <h3 className="font-semibold">Receipt Scanning</h3>
+            </div>
+            <p className="text-sm text-muted-foreground text-pretty">
+              Snap a photo, get instant tax extraction with OCR.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-6 cursor-pointer">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+                <Search className="size-5 text-primary" />
+              </div>
+              <h3 className="font-semibold">Smart Detection</h3>
+            </div>
+            <p className="text-sm text-muted-foreground text-pretty">
+              Find potential deductions and spending patterns automatically.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-6 cursor-pointer sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+                <TrendingUp className="size-5 text-primary" />
+              </div>
+              <h3 className="font-semibold">Visual Analytics</h3>
+            </div>
+            <p className="text-sm text-muted-foreground text-pretty">
+              Charts and trends showing your tax burden over time.
+            </p>
+          </div>
+        </section>
 
         {/* Interactive Demo */}
         <InteractiveDemo />
@@ -83,32 +141,53 @@ export default async function HomePage() {
         {/* Features - Real Examples */}
         <FeaturesSection />
 
-        {/* CTA */}
-        <section className="mt-32 text-center">
-          <div className="mx-auto max-w-2xl rounded-3xl border border-border bg-gradient-to-br from-card to-card/50 p-12 shadow-2xl backdrop-blur">
-            <h2 className="text-3xl font-bold tracking-tight">
-              Start tracking your taxes today
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              Free to use. No credit card required. Just sign up and start logging.
-            </p>
-            <Button
-              size="lg"
-              className="mt-8 h-12 px-8 text-lg bg-gradient-to-r from-primary to-accent shadow-lg shadow-primary/25"
-              asChild
-            >
-              <Link href="/auth/signin">Get Started Free</Link>
-            </Button>
+        {/* CTA - Bento Style */}
+        <section className="mt-24">
+          <div className="rounded-3xl border border-border bg-card p-8 lg:p-12">
+            <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
+              <div>
+                <h2 className="text-3xl font-bold tracking-tight text-balance lg:text-4xl">
+                  Start tracking your taxes today
+                </h2>
+                <p className="mt-4 text-lg text-muted-foreground text-pretty">
+                  Free to use. No credit card required. Just sign up and start logging.
+                </p>
+                <Button size="lg" className="mt-8 h-12 px-8 text-lg" asChild>
+                  <Link href="/auth/signin">
+                    Get Started Free
+                    <ArrowRight className="ml-2 size-5" />
+                  </Link>
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-2xl border border-border bg-background p-4 text-center">
+                  <div className="text-2xl font-bold text-primary">Free</div>
+                  <div className="text-sm text-muted-foreground">Forever</div>
+                </div>
+                <div className="rounded-2xl border border-border bg-background p-4 text-center">
+                  <div className="text-2xl font-bold tabular-nums">5 min</div>
+                  <div className="text-sm text-muted-foreground">Setup time</div>
+                </div>
+                <div className="rounded-2xl border border-border bg-background p-4 text-center">
+                  <div className="text-2xl font-bold">Smart</div>
+                  <div className="text-sm text-muted-foreground">Detection</div>
+                </div>
+                <div className="rounded-2xl border border-border bg-background p-4 text-center">
+                  <div className="text-2xl font-bold tabular-nums">100%</div>
+                  <div className="text-sm text-muted-foreground">Private</div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="mt-32 border-t border-border bg-card/30">
+      <footer className="mt-24 border-t border-border bg-card/50">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
+              <div className="flex size-8 items-center justify-center rounded-lg bg-primary">
                 <span className="text-sm font-bold text-primary-foreground">T</span>
               </div>
               <span className="font-semibold">TaxHelper</span>
