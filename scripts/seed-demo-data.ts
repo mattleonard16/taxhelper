@@ -18,6 +18,7 @@ interface Transaction {
     merchant: string;
     totalAmount: number;
     taxAmount: number;
+    priority?: "HIGH" | "MEDIUM" | "LOW";
 }
 
 function createTransaction(
@@ -26,7 +27,8 @@ function createTransaction(
     preTaxAmount: number,
     taxRate: number,
     type: "SALES_TAX" | "INCOME_TAX" | "OTHER" = "SALES_TAX",
-    description?: string
+    description?: string,
+    priority?: "HIGH" | "MEDIUM" | "LOW"
 ): Transaction {
     const taxAmount = preTaxAmount * taxRate;
     const totalAmount = preTaxAmount + taxAmount;
@@ -41,6 +43,7 @@ function createTransaction(
         merchant,
         totalAmount,
         taxAmount,
+        priority,
     };
 }
 
@@ -49,65 +52,66 @@ async function seedDemoData(userId: string) {
 
     const transactions: Transaction[] = [
         // TODAY - Typical day
-        createTransaction(0, "Starbucks", 6.50, SF_SALES_TAX, "SALES_TAX", "Morning coffee"),
-        createTransaction(0, "Whole Foods", 45.00, SF_SALES_TAX, "SALES_TAX", "Groceries"),
-        createTransaction(0, "Uber", 28.00, 0, "OTHER", "Ride to work (no sales tax)"),
-        createTransaction(0, "Chipotle", 15.50, SF_SALES_TAX, "SALES_TAX", "Lunch"),
+        createTransaction(0, "Starbucks", 6.50, SF_SALES_TAX, "SALES_TAX", "Morning coffee", "LOW"),
+        createTransaction(0, "Whole Foods", 45.00, SF_SALES_TAX, "SALES_TAX", "Groceries", "MEDIUM"),
+        createTransaction(0, "Uber", 28.00, 0, "OTHER", "Ride to work (no sales tax)", "LOW"),
+        createTransaction(0, "Chipotle", 15.50, SF_SALES_TAX, "SALES_TAX", "Lunch", "LOW"),
 
         // YESTERDAY
-        createTransaction(1, "Target", 89.00, SF_SALES_TAX, "SALES_TAX", "Household items"),
-        createTransaction(1, "Shell Gas Station", 65.00, 0.0511, "SALES_TAX", "Gas (CA excise tax)"),
-        createTransaction(1, "Amazon (taxable)", 125.00, SF_SALES_TAX, "SALES_TAX", "Electronics"),
+        createTransaction(1, "Target", 89.00, SF_SALES_TAX, "SALES_TAX", "Household items", "MEDIUM"),
+        createTransaction(1, "Shell Gas Station", 65.00, 0.0511, "SALES_TAX", "Gas (CA excise tax)", "MEDIUM"),
+        createTransaction(1, "Amazon (taxable)", 125.00, SF_SALES_TAX, "SALES_TAX", "Electronics", "HIGH"),
 
         // 2 DAYS AGO
-        createTransaction(2, "Trader Joe's", 78.00, SF_SALES_TAX, "SALES_TAX", "Weekly groceries"),
-        createTransaction(2, "Netflix", 22.99, SF_SALES_TAX, "SALES_TAX", "Streaming subscription"),
+        createTransaction(2, "Trader Joe's", 78.00, SF_SALES_TAX, "SALES_TAX", "Weekly groceries", "MEDIUM"),
+        createTransaction(2, "Netflix", 22.99, SF_SALES_TAX, "SALES_TAX", "Streaming subscription", "LOW"),
 
         // 3 DAYS AGO
-        createTransaction(3, "CVS Pharmacy", 35.00, SF_SALES_TAX, "SALES_TAX", "Medicine & toiletries"),
-        createTransaction(3, "DoorDash", 42.00, SF_SALES_TAX, "SALES_TAX", "Dinner delivery"),
+        createTransaction(3, "CVS Pharmacy", 35.00, SF_SALES_TAX, "SALES_TAX", "Medicine & toiletries", "MEDIUM"),
+        createTransaction(3, "DoorDash", 42.00, SF_SALES_TAX, "SALES_TAX", "Dinner delivery", "LOW"),
 
         // 4 DAYS AGO
-        createTransaction(4, "Costco", 285.00, SF_SALES_TAX, "SALES_TAX", "Bulk shopping"),
-        createTransaction(4, "Spotify", 14.99, SF_SALES_TAX, "SALES_TAX", "Music subscription"),
+        createTransaction(4, "Costco", 285.00, SF_SALES_TAX, "SALES_TAX", "Bulk shopping", "HIGH"),
+        createTransaction(4, "Spotify", 14.99, SF_SALES_TAX, "SALES_TAX", "Music subscription", "LOW"),
 
         // 5 DAYS AGO
-        createTransaction(5, "Safeway", 62.00, SF_SALES_TAX, "SALES_TAX", "Groceries"),
-        createTransaction(5, "Home Depot", 156.00, SF_SALES_TAX, "SALES_TAX", "Home improvement"),
+        createTransaction(5, "Safeway", 62.00, SF_SALES_TAX, "SALES_TAX", "Groceries", "MEDIUM"),
+        createTransaction(5, "Home Depot", 156.00, SF_SALES_TAX, "SALES_TAX", "Home improvement", "HIGH"),
 
         // 6 DAYS AGO
-        createTransaction(6, "Best Buy", 299.00, SF_SALES_TAX, "SALES_TAX", "Headphones"),
-        createTransaction(6, "PG&E", 145.00, 0, "OTHER", "Electricity bill"),
+        createTransaction(6, "Best Buy", 299.00, SF_SALES_TAX, "SALES_TAX", "Headphones", "HIGH"),
+        createTransaction(6, "PG&E", 145.00, 0, "OTHER", "Electricity bill", "MEDIUM"),
 
         // 1 WEEK AGO - Monthly bills
-        createTransaction(7, "State Farm", 185.00, 0.035, "OTHER", "Car insurance premium"),
-        createTransaction(7, "Kaiser Permanente", 450.00, 0, "OTHER", "Health insurance premium"),
+        createTransaction(7, "State Farm", 185.00, 0.035, "OTHER", "Car insurance premium", "HIGH"),
+        createTransaction(7, "Kaiser Permanente", 450.00, 0, "OTHER", "Health insurance premium", "HIGH"),
 
         // 2 WEEKS AGO
-        createTransaction(14, "Apple Store", 1099.00, SF_SALES_TAX, "SALES_TAX", "iPhone 15"),
-        createTransaction(14, "Uniqlo", 89.00, SF_SALES_TAX, "SALES_TAX", "Clothing"),
+        createTransaction(14, "Apple Store", 1099.00, SF_SALES_TAX, "SALES_TAX", "iPhone 15", "HIGH"),
+        createTransaction(14, "Uniqlo", 89.00, SF_SALES_TAX, "SALES_TAX", "Clothing", "MEDIUM"),
 
         // 3 WEEKS AGO
-        createTransaction(21, "REI", 245.00, SF_SALES_TAX, "SALES_TAX", "Outdoor gear"),
-        createTransaction(21, "Comcast", 89.00, 0.08, "OTHER", "Internet bill"),
+        createTransaction(21, "REI", 245.00, SF_SALES_TAX, "SALES_TAX", "Outdoor gear", "MEDIUM"),
+        createTransaction(21, "Comcast", 89.00, 0.08, "OTHER", "Internet bill", "MEDIUM"),
 
         // 1 MONTH AGO - Income tax payment
-        createTransaction(30, "IRS", 2500.00, 0, "INCOME_TAX", "Q4 estimated tax payment"),
-        createTransaction(30, "CA Franchise Tax Board", 850.00, 0, "INCOME_TAX", "CA state estimated tax"),
+        createTransaction(30, "IRS", 2500.00, 0, "INCOME_TAX", "Q4 estimated tax payment", "HIGH"),
+        createTransaction(30, "CA Franchise Tax Board", 850.00, 0, "INCOME_TAX", "CA state estimated tax", "HIGH"),
     ];
 
     let created = 0;
-    for (const tx of transactions) {
-        await prisma.transaction.create({
+    for (const transaction of transactions) {
+        const tx = await prisma.transaction.create({
             data: {
                 userId,
-                date: tx.date,
-                type: tx.type,
-                description: tx.description,
-                merchant: tx.merchant,
-                totalAmount: tx.totalAmount,
-                taxAmount: tx.taxAmount,
+                date: transaction.date,
+                type: transaction.type,
+                description: transaction.description,
+                merchant: transaction.merchant,
+                totalAmount: transaction.totalAmount,
+                taxAmount: transaction.taxAmount,
                 currency: "USD",
+                priority: transaction.priority || "MEDIUM",
             },
         });
         console.log(`✓ ${tx.merchant}: $${tx.totalAmount.toFixed(2)} (tax: $${tx.taxAmount.toFixed(2)})`);

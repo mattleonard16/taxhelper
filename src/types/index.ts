@@ -3,9 +3,10 @@
  * These types represent the API response shapes
  */
 
-// Import and re-export TransactionType from schemas (single source of truth)
-import type { TransactionType as TransactionTypeSchema } from "@/lib/schemas";
+// Import and re-export TransactionType and TransactionPriority from schemas (single source of truth)
+import type { TransactionType as TransactionTypeSchema, TransactionPriority as TransactionPrioritySchema } from "@/lib/schemas";
 export type TransactionType = TransactionTypeSchema;
+export type TransactionPriority = TransactionPrioritySchema;
 
 // Transaction type from API responses
 export interface Transaction {
@@ -17,6 +18,7 @@ export interface Transaction {
   totalAmount: string;
   taxAmount: string;
   currency?: string;
+  priority?: TransactionPriority;
 }
 
 // Template type from API responses

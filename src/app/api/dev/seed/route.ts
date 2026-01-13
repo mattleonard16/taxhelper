@@ -36,55 +36,56 @@ interface TxInput {
     taxRate: number;
     type: "SALES_TAX" | "INCOME_TAX" | "OTHER";
     desc: string;
+    priority?: "HIGH" | "MEDIUM" | "LOW";
 }
 
 const txData: TxInput[] = [
     // TODAY
-    { daysAgo: 0, merchant: "Starbucks", preTax: 6.50, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Morning coffee" },
-    { daysAgo: 0, merchant: "Whole Foods", preTax: 45.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Groceries" },
-    { daysAgo: 0, merchant: "Uber", preTax: 28.00, taxRate: 0, type: "OTHER", desc: "Ride to work" },
-    { daysAgo: 0, merchant: "Chipotle", preTax: 15.50, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Lunch" },
+    { daysAgo: 0, merchant: "Starbucks", preTax: 6.50, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Morning coffee", priority: "LOW" },
+    { daysAgo: 0, merchant: "Whole Foods", preTax: 45.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Groceries", priority: "MEDIUM" },
+    { daysAgo: 0, merchant: "Uber", preTax: 28.00, taxRate: 0, type: "OTHER", desc: "Ride to work", priority: "LOW" },
+    { daysAgo: 0, merchant: "Chipotle", preTax: 15.50, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Lunch", priority: "LOW" },
 
     // YESTERDAY
-    { daysAgo: 1, merchant: "Target", preTax: 89.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Household items" },
-    { daysAgo: 1, merchant: "Shell Gas", preTax: 65.00, taxRate: 0.0511, type: "SALES_TAX", desc: "Gas" },
-    { daysAgo: 1, merchant: "Amazon", preTax: 125.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Electronics" },
+    { daysAgo: 1, merchant: "Target", preTax: 89.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Household items", priority: "MEDIUM" },
+    { daysAgo: 1, merchant: "Shell Gas", preTax: 65.00, taxRate: 0.0511, type: "SALES_TAX", desc: "Gas", priority: "MEDIUM" },
+    { daysAgo: 1, merchant: "Amazon", preTax: 125.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Electronics", priority: "HIGH" },
 
     // 2 DAYS AGO
-    { daysAgo: 2, merchant: "Trader Joe's", preTax: 78.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Weekly groceries" },
-    { daysAgo: 2, merchant: "Netflix", preTax: 22.99, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Streaming" },
+    { daysAgo: 2, merchant: "Trader Joe's", preTax: 78.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Weekly groceries", priority: "MEDIUM" },
+    { daysAgo: 2, merchant: "Netflix", preTax: 22.99, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Streaming", priority: "LOW" },
 
     // 3 DAYS AGO
-    { daysAgo: 3, merchant: "CVS", preTax: 35.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Medicine" },
-    { daysAgo: 3, merchant: "DoorDash", preTax: 42.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Dinner" },
+    { daysAgo: 3, merchant: "CVS", preTax: 35.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Medicine", priority: "MEDIUM" },
+    { daysAgo: 3, merchant: "DoorDash", preTax: 42.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Dinner", priority: "LOW" },
 
     // 4 DAYS AGO
-    { daysAgo: 4, merchant: "Costco", preTax: 285.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Bulk shopping" },
-    { daysAgo: 4, merchant: "Spotify", preTax: 14.99, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Music" },
+    { daysAgo: 4, merchant: "Costco", preTax: 285.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Bulk shopping", priority: "HIGH" },
+    { daysAgo: 4, merchant: "Spotify", preTax: 14.99, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Music", priority: "LOW" },
 
     // 5 DAYS AGO
-    { daysAgo: 5, merchant: "Safeway", preTax: 62.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Groceries" },
-    { daysAgo: 5, merchant: "Home Depot", preTax: 156.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Home improvement" },
+    { daysAgo: 5, merchant: "Safeway", preTax: 62.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Groceries", priority: "MEDIUM" },
+    { daysAgo: 5, merchant: "Home Depot", preTax: 156.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Home improvement", priority: "HIGH" },
 
     // 6 DAYS AGO
-    { daysAgo: 6, merchant: "Best Buy", preTax: 299.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Headphones" },
-    { daysAgo: 6, merchant: "PG&E", preTax: 145.00, taxRate: 0, type: "OTHER", desc: "Electric" },
+    { daysAgo: 6, merchant: "Best Buy", preTax: 299.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Headphones", priority: "HIGH" },
+    { daysAgo: 6, merchant: "PG&E", preTax: 145.00, taxRate: 0, type: "OTHER", desc: "Electric", priority: "MEDIUM" },
 
     // 7 DAYS AGO - INSURANCE
-    { daysAgo: 7, merchant: "State Farm", preTax: 185.00, taxRate: 0.035, type: "OTHER", desc: "Car insurance" },
-    { daysAgo: 7, merchant: "Kaiser", preTax: 450.00, taxRate: 0, type: "OTHER", desc: "Health insurance" },
+    { daysAgo: 7, merchant: "State Farm", preTax: 185.00, taxRate: 0.035, type: "OTHER", desc: "Car insurance", priority: "HIGH" },
+    { daysAgo: 7, merchant: "Kaiser", preTax: 450.00, taxRate: 0, type: "OTHER", desc: "Health insurance", priority: "HIGH" },
 
     // 2 WEEKS AGO
-    { daysAgo: 14, merchant: "Apple", preTax: 1099.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "iPhone 15" },
-    { daysAgo: 14, merchant: "Uniqlo", preTax: 89.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Clothing" },
+    { daysAgo: 14, merchant: "Apple", preTax: 1099.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "iPhone 15", priority: "HIGH" },
+    { daysAgo: 14, merchant: "Uniqlo", preTax: 89.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Clothing", priority: "MEDIUM" },
 
     // 3 WEEKS AGO
-    { daysAgo: 21, merchant: "REI", preTax: 245.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Outdoor gear" },
-    { daysAgo: 21, merchant: "Comcast", preTax: 89.00, taxRate: 0.08, type: "OTHER", desc: "Internet" },
+    { daysAgo: 21, merchant: "REI", preTax: 245.00, taxRate: SF_SALES_TAX, type: "SALES_TAX", desc: "Outdoor gear", priority: "MEDIUM" },
+    { daysAgo: 21, merchant: "Comcast", preTax: 89.00, taxRate: 0.08, type: "OTHER", desc: "Internet", priority: "MEDIUM" },
 
     // 1 MONTH AGO - TAX PAYMENTS
-    { daysAgo: 30, merchant: "IRS", preTax: 2500.00, taxRate: 0, type: "INCOME_TAX", desc: "Q4 estimated tax" },
-    { daysAgo: 30, merchant: "CA FTB", preTax: 850.00, taxRate: 0, type: "INCOME_TAX", desc: "CA state tax" },
+    { daysAgo: 30, merchant: "IRS", preTax: 2500.00, taxRate: 0, type: "INCOME_TAX", desc: "Q4 estimated tax", priority: "HIGH" },
+    { daysAgo: 30, merchant: "CA FTB", preTax: 850.00, taxRate: 0, type: "INCOME_TAX", desc: "CA state tax", priority: "HIGH" },
 ];
 
 export async function POST() {
@@ -124,6 +125,7 @@ export async function POST() {
                     totalAmount: total,
                     taxAmount: tax,
                     currency: "USD",
+                    priority: input.priority || "MEDIUM",
                 },
             });
             created++;
