@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Badge } from "@/components/ui/badge";
@@ -32,9 +30,9 @@ const VIRTUAL_ROW_HEIGHT = 56;
 const VIRTUAL_OVERSCAN = 8;
 const VIRTUAL_VIEWPORT_HEIGHT = 560;
 const VIRTUAL_GRID_TEMPLATE =
-  "grid-cols-[140px_110px_minmax(140px,1fr)_minmax(160px,1.2fr)_120px_110px_90px_120px]";
+  "grid-cols-[140px_110px_minmax(140px,1fr)_minmax(160px,1.2fr)_120px_110px_90px_100px_120px]";
 const VIRTUAL_GRID_TEMPLATE_WITH_SELECTION =
-  "grid-cols-[40px_140px_110px_minmax(140px,1fr)_minmax(160px,1.2fr)_120px_110px_90px_120px]";
+  "grid-cols-[40px_140px_110px_minmax(140px,1fr)_minmax(160px,1.2fr)_120px_110px_90px_100px_120px]";
 const VIRTUAL_CELL_BASE = "px-3 py-2 whitespace-nowrap md:px-2";
 
 function calculateTaxRate(taxAmount: string, totalAmount: string): string {
@@ -44,6 +42,25 @@ function calculateTaxRate(taxAmount: string, totalAmount: string): string {
   if (preTax <= 0) return "—";
   const rate = (tax / preTax) * 100;
   return `${rate.toFixed(1)}%`;
+}
+
+function PriorityBadge({ priority }: { priority?: string }) {
+  if (!priority) return null;
+  
+  const colors = {
+    HIGH: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border-red-300",
+    MEDIUM: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 border-yellow-300", 
+    LOW: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 border-gray-300"
+  };
+  
+  return (
+    <Badge 
+      variant="outline" 
+      className={cn("text-xs font-medium", colors[priority as keyof typeof colors])}
+    >
+      {priority}
+    </Badge>
+  );
 }
 
 function TransactionActions({
@@ -183,6 +200,9 @@ function VirtualizedTransactionTable({
             >
               Rate
             </div>
+            <div role="columnheader" className={VIRTUAL_CELL_BASE}>
+              Priority
+            </div>
             <div role="columnheader" className={VIRTUAL_CELL_BASE} />
           </div>
 
@@ -263,6 +283,9 @@ function VirtualizedTransactionTable({
                         transaction.taxAmount,
                         transaction.totalAmount
                       )}
+                    </div>
+                    <div role="cell" className={VIRTUAL_CELL_BASE}>
+                      <PriorityBadge priority={transaction.priority} />
                     </div>
                     <div role="cell" className={VIRTUAL_CELL_BASE}>
                       <TransactionActions
@@ -364,6 +387,7 @@ export const TransactionList = React.memo(function TransactionList({
             <TableHead className="text-right">Total</TableHead>
             <TableHead className="text-right">Tax</TableHead>
             <TableHead className="text-right">Rate</TableHead>
+            <TableHead>Priority</TableHead>
             <TableHead className="w-[100px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -409,6 +433,9 @@ export const TransactionList = React.memo(function TransactionList({
               </TableCell>
               <TableCell className="text-right text-sm font-medium text-amber-600 dark:text-amber-400">
                 {calculateTaxRate(transaction.taxAmount, transaction.totalAmount)}
+              </TableCell>
+              <TableCell>
+                <PriorityBadge priority={transaction.priority} />
               </TableCell>
               <TableCell>
                 <TransactionActions

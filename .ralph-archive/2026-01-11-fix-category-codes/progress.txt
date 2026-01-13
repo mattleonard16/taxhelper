@@ -1,0 +1,12 @@
+# Ralph Progress Log
+Started: Sun Jan 11 2026
+Feature: UI Rework (plan/feature/08-ui-rework.md)
+---
+
+## Codebase Patterns
+- Use shadcn/ui primitives from `src/components/ui` as base building blocks
+- CSS variables in `src/app/globals.css` for design tokens
+- Do NOT remove or rename existing Playwright `data-testid` hooks
+- Preserve API shapes and business logic; this is UI/UX-first work
+- Mobile-first responsiveness for all authenticated routes
+---

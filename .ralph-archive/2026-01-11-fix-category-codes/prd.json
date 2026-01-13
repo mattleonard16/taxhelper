@@ -1,0 +1,129 @@
+{
+  "project": "TaxHelper",
+  "branchName": "ralph/ui-rework",
+  "description": "UI rework to remove 'vibe code' feel and create a calmer, polished SaaS UI",
+  "planFile": "plan/feature/08-ui-rework.md",
+  "userStories": [
+    {
+      "id": "US-UI-001",
+      "title": "Design tokens + baseline polish",
+      "description": "Establish consistent spacing/typography defaults and background layers.",
+      "acceptanceCriteria": [
+        "All pages show consistent card padding and readable type scale",
+        "Focus rings are visible and consistent across inputs/buttons",
+        "Lint passes",
+        "Typecheck passes"
+      ],
+      "files": ["src/app/globals.css", "src/components/ui/*"],
+      "priority": 1,
+      "passes": true,
+      "notes": "Prefer CSS variables in globals.css and shadcn theme conventions"
+    },
+    {
+      "id": "US-UI-002",
+      "title": "Standard page header component",
+      "description": "Create a reusable PageHeader used on dashboard/transactions/receipts/insights/settings.",
+      "acceptanceCriteria": [
+        "Each page has consistent title/subtitle/actions layout (desktop + mobile)",
+        "No route behavior changes",
+        "Lint passes",
+        "Typecheck passes"
+      ],
+      "files": ["src/components/PageHeader.tsx", "src/app/(app)/**/page.tsx"],
+      "priority": 2,
+      "passes": false,
+      "notes": "Reusable component with title, subtitle, and right-side actions"
+    },
+    {
+      "id": "US-UI-003",
+      "title": "Dashboard redesign pass",
+      "description": "Calm the dashboard grid: align cards, unify chart containers, improve empty states.",
+      "acceptanceCriteria": [
+        "Dashboard reads as a cohesive set of cards (consistent headers/padding)",
+        "Loading/empty states are intentional (no jumpy layout)",
+        "Lint passes",
+        "Typecheck passes"
+      ],
+      "files": ["src/app/(app)/dashboard/page.tsx", "src/components/dashboard/*"],
+      "priority": 3,
+      "passes": false,
+      "notes": "Use PageHeader component from US-UI-002"
+    },
+    {
+      "id": "US-UI-004",
+      "title": "Transactions filters + list density",
+      "description": "Improve filters layout, spacing, and default states; reduce visual noise. Improve transaction row typography, spacing, hover/selection clarity.",
+      "acceptanceCriteria": [
+        "Filter bar is usable on mobile without horizontal overflow",
+        "Selection state is obvious without heavy borders",
+        "Existing virtualization and data-testid hooks remain intact",
+        "Lint passes",
+        "Typecheck passes"
+      ],
+      "files": ["src/app/(app)/transactions/page.tsx", "src/components/transactions/transaction-list.tsx", "src/components/transactions/filter-chips.tsx"],
+      "priority": 4,
+      "passes": false,
+      "notes": "Do NOT remove or rename existing Playwright data-testid hooks"
+    },
+    {
+      "id": "US-UI-005",
+      "title": "Bulk actions bar visual update",
+      "description": "Make bulk actions feel 'product-grade': spacing, button sizing, clearer primary/secondary actions.",
+      "acceptanceCriteria": [
+        "Bulk actions bar is readable and not visually overpowering",
+        "data-testid hooks preserved",
+        "Lint passes",
+        "Typecheck passes"
+      ],
+      "files": ["src/components/transactions/bulk-actions-bar.tsx"],
+      "priority": 5,
+      "passes": false,
+      "notes": "Maintain existing behavior and test hooks"
+    },
+    {
+      "id": "US-UI-006",
+      "title": "Receipts inbox + review drawer redesign",
+      "description": "Improve inbox list readability; make review drawer hierarchy clearer (confidence, error, required fields).",
+      "acceptanceCriteria": [
+        "Failed jobs are clearly distinguishable",
+        "Confirm flow remains unchanged; required fields are obvious",
+        "Lint passes",
+        "Typecheck passes"
+      ],
+      "files": ["src/app/(app)/receipts/page.tsx", "src/components/receipts/receipt-review-drawer.tsx"],
+      "priority": 6,
+      "passes": false,
+      "notes": "Do not change confirm flow behavior"
+    },
+    {
+      "id": "US-UI-007",
+      "title": "Insights page polish",
+      "description": "Unify insight cards, severity emphasis, and drilldown UX.",
+      "acceptanceCriteria": [
+        "Insight list reads cleanly (no noisy borders)",
+        "Pin/dismiss affordances are clear",
+        "Lint passes",
+        "Typecheck passes"
+      ],
+      "files": ["src/app/(app)/insights/page.tsx", "src/components/insights/insight-card.tsx"],
+      "priority": 7,
+      "passes": false,
+      "notes": "Keep existing insight generation logic unchanged"
+    },
+    {
+      "id": "US-UI-008",
+      "title": "Settings + auth pages refinement",
+      "description": "Improve form layout, spacing, and inline help copy.",
+      "acceptanceCriteria": [
+        "Forms have consistent widths and spacing",
+        "Dev login button remains visible only under existing env rules",
+        "Lint passes",
+        "Typecheck passes"
+      ],
+      "files": ["src/app/(app)/settings/page.tsx", "src/app/auth/signin/page.tsx", "src/app/auth/signup/page.tsx"],
+      "priority": 8,
+      "passes": false,
+      "notes": "Do not change auth logic or dev login conditions"
+    }
+  ]
+}

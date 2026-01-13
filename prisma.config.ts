@@ -1,6 +1,7 @@
 // Prisma 7.x configuration
 // Uses process.env directly to allow builds without DATABASE_URL
-import "dotenv/config";
+import { config } from "dotenv";
+config({ path: ".env.local" });
 import { defineConfig } from "prisma/config";
 
 export default defineConfig({

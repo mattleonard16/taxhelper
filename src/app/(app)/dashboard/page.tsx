@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import { SummaryCards } from "@/components/dashboard/summary-cards";
 import { TaxTimeseriesChart } from "@/components/dashboard/tax-timeseries-chart";
 import { TaxByTypeChart } from "@/components/dashboard/tax-by-type-chart";
@@ -92,25 +93,19 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="mt-1 text-muted-foreground">
-            Track your tax awareness across all transactions
-          </p>
-        </div>
-
-        {/* Desktop Action Button */}
+    <div className="section-gap">
+      <PageHeader
+        title="Dashboard"
+        subtitle="Track your tax awareness across all transactions"
+      >
         <Button
-          size="lg"
-          className="hidden bg-gradient-to-r from-primary to-accent shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 sm:flex"
+          className="hidden sm:flex"
           onClick={() => setFormOpen(true)}
         >
-          <Plus className="mr-2 h-5 w-5" />
+          <Plus className="mr-2 h-4 w-4" />
           Add Transaction
         </Button>
-      </div>
+      </PageHeader>
 
       {/* Mobile FAB */}
       <Button

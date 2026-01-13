@@ -116,8 +116,9 @@ describe("summary API route", () => {
 
     // Mock $queryRaw for daily aggregations
     prismaQueryRaw.mockResolvedValue([
-      { date_key: new Date("2024-01-15"), total_tax: new Prisma.Decimal(7) },
-      { date_key: new Date("2024-01-16"), total_tax: new Prisma.Decimal(3) },
+      // route.ts uses TO_CHAR(..., 'YYYY-MM-DD') so date_key is a string
+      { date_key: "2024-01-15", total_tax: new Prisma.Decimal(7) },
+      { date_key: "2024-01-16", total_tax: new Prisma.Decimal(3) },
     ]);
 
     const request = new NextRequest("http://localhost/api/summary?from=2024-01-01&to=2024-01-31");

@@ -1,0 +1,27 @@
+# Ralph Progress Log
+Started: Mon Jan 12 17:34:36 PST 2026
+---
+
+## Mon Jan 13 01:38:00 PST 2026 - US-003
+- Implemented priority badges on transaction list with colored styling
+- Added PriorityBadge component with red (HIGH), yellow (MEDIUM), and gray (LOW) colors
+- Updated transaction list table layouts (both virtualized and standard) to include priority column
+- Added priority field to Transaction interface in types/index.ts with proper type export from schemas
+- Files changed: src/types/index.ts, src/components/transactions/transaction-list.tsx
+- **Learnings for future iterations:**
+  - Patterns discovered: The transaction list uses two rendering modes - a virtualized table for large datasets (>50 rows) and a standard table for smaller datasets, requiring updates to both implementations
+  - Gotchas encountered: Grid template columns need to be updated in multiple places (VIRTUAL_GRID_TEMPLATE, VIRTUAL_GRID_TEMPLATE_WITH_SELECTION) when adding new columns
+  - Useful context: Badge styling uses Tailwind classes that need explicit dark mode variants (dark:bg-red-900, dark:text-red-200) for proper theming
+---
+
+## Mon Jan 12 17:38:00 PST 2026 - US-002
+- Updated transaction API to handle priority field in both POST and GET requests
+- Added TransactionPrioritySchema enum for validation (HIGH/MEDIUM/LOW)
+- Set default priority to MEDIUM in createTransactionSchema
+- Added comprehensive test coverage for priority handling
+- Files changed: src/lib/schemas.ts, src/app/api/transactions/route.ts, src/app/api/transactions/__tests__/route.test.ts
+- **Learnings for future iterations:**
+  - Patterns discovered: The testing pattern in this codebase uses vi.mock with proper typing and mock implementations that mirror the actual database operations
+  - Gotchas encountered: When implementing field validation, need to add both to create and update schemas
+  - Useful context: Priority defaults to MEDIUM if not specified, matching the database schema default
+---
