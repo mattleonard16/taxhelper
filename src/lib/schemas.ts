@@ -10,6 +10,10 @@ import { CATEGORY_CODES } from './categories';
 export const TransactionTypeSchema = z.enum(['SALES_TAX', 'INCOME_TAX', 'OTHER']);
 export type TransactionType = z.infer<typeof TransactionTypeSchema>;
 
+// Transaction priority enum matching Prisma
+export const TransactionPrioritySchema = z.enum(['HIGH', 'MEDIUM', 'LOW']);
+export type TransactionPriority = z.infer<typeof TransactionPrioritySchema>;
+
 // Date schema that accepts YYYY-MM-DD (from HTML date inputs) or full ISO datetime
 export const dateStringSchema = z.string().refine(
     (val) => {
@@ -32,6 +36,7 @@ export const createTransactionSchema = z.object({
     currency: z.string().length(3).default('USD'),
     receiptPath: z.string().max(500).nullish(),
     receiptName: z.string().max(200).nullish(),
+    priority: TransactionPrioritySchema.default('MEDIUM'),
 });
 export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
 
@@ -46,6 +51,7 @@ export const updateTransactionSchema = z.object({
     currency: z.string().length(3).optional(),
     receiptPath: z.string().max(500).nullish(),
     receiptName: z.string().max(200).nullish(),
+    priority: TransactionPrioritySchema.optional(),
 });
 export type UpdateTransactionInput = z.infer<typeof updateTransactionSchema>;
 

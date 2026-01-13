@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
       return attachRequestId(bodyResult.error, requestId);
     }
 
-    const { date, type, description, merchant, totalAmount, taxAmount, currency, receiptPath, receiptName } = bodyResult.data;
+    const { date, type, description, merchant, totalAmount, taxAmount, currency, receiptPath, receiptName, priority } = bodyResult.data;
 
     const transactionData: Record<string, unknown> = {
       userId: user.id,
@@ -191,6 +191,7 @@ export async function POST(request: NextRequest) {
       totalAmount,
       taxAmount,
       currency: currency || "USD",
+      priority,
     };
 
     // Add receipt fields if the schema has been migrated
