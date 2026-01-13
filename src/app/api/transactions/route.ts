@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       ), requestId);
     }
 
-    const { ids, from, to, type, search, minAmount, maxAmount, category, isDeductible, page, limit } = parseResult.data;
+    const { ids, from, to, type, search, minAmount, maxAmount, category, isDeductible, priority, page, limit } = parseResult.data;
     const getElapsed = startTimer();
     const searchLogFilters = {
       hasDateRange: Boolean(from || to),
@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
       hasAmountRange: minAmount !== undefined || maxAmount !== undefined,
       hasCategory: Boolean(category),
       hasDeductible: isDeductible !== undefined,
+      hasPriority: Boolean(priority),
     };
 
     // Fetch by explicit IDs (used by Insights drill-down)
@@ -105,6 +106,7 @@ export async function GET(request: NextRequest) {
       maxAmount,
       category,
       isDeductible,
+      priority,
     });
 
     const [transactions, total] = await Promise.all([

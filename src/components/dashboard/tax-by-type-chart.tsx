@@ -1,8 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
+import { ArrowRight } from "lucide-react";
 
 interface ByTypeData {
   SALES_TAX: string;
@@ -39,8 +42,13 @@ export function TaxByTypeChart({ data }: TaxByTypeChartProps) {
 
   return (
     <Card className="border-0 bg-card/50 shadow-lg backdrop-blur">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-semibold">Tax by Type</CardTitle>
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/transactions">
+            View all <ArrowRight className="ml-1 h-4 w-4" />
+          </Link>
+        </Button>
       </CardHeader>
       <CardContent>
         {chartData.length === 0 ? (
@@ -88,7 +96,11 @@ export function TaxByTypeChart({ data }: TaxByTypeChartProps) {
             </ResponsiveContainer>
             <div className="flex flex-row gap-6 lg:flex-col lg:gap-3">
               {chartData.map((item, index) => (
-                <div key={item.key} className="flex items-center gap-3">
+                <Link
+                  key={item.key}
+                  href={`/transactions?type=${encodeURIComponent(item.key)}`}
+                  className="flex items-center gap-3 rounded-lg p-1.5 -m-1.5 transition-colors hover:bg-muted/50"
+                >
                   <div
                     className="h-3 w-3 rounded-full"
                     style={{ backgroundColor: COLORS[index % COLORS.length] }}
@@ -99,7 +111,7 @@ export function TaxByTypeChart({ data }: TaxByTypeChartProps) {
                       {formatCurrency(item.value)}
                     </p>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

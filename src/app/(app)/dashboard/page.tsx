@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
@@ -178,7 +179,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Recent Transactions</h2>
           <Button variant="ghost" asChild>
-            <a href="/transactions">View all →</a>
+            <Link href="/transactions">View all →</Link>
           </Button>
         </div>
         <TransactionList

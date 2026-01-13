@@ -111,6 +111,7 @@ export const transactionQuerySchema = z.object({
         },
         z.boolean().optional()
     ),
+    priority: z.preprocess(emptyToUndefined, TransactionPrioritySchema.optional()),
     ids: z.preprocess(
         (val) => {
             if (typeof val !== 'string' || val.trim() === '') return undefined;

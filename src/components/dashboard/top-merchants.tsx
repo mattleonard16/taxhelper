@@ -1,7 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
+import { ArrowRight } from "lucide-react";
 
 interface MerchantData {
   merchant: string;
@@ -17,8 +20,13 @@ export function TopMerchants({ merchants }: TopMerchantsProps) {
 
   return (
     <Card className="border-0 bg-card/50 shadow-lg backdrop-blur">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-semibold">Top Merchants by Tax</CardTitle>
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/transactions">
+            View all <ArrowRight className="ml-1 h-4 w-4" />
+          </Link>
+        </Button>
       </CardHeader>
       <CardContent>
         {merchants.length === 0 ? (
@@ -32,7 +40,11 @@ export function TopMerchants({ merchants }: TopMerchantsProps) {
               const percentage = maxTax > 0 ? (taxAmount / maxTax) * 100 : 0;
 
               return (
-                <div key={merchant.merchant} className="space-y-2">
+                <Link
+                  key={merchant.merchant}
+                  href={`/transactions?search=${encodeURIComponent(merchant.merchant)}`}
+                  className="block space-y-2 rounded-lg p-2 -mx-2 transition-colors hover:bg-muted/50"
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-xs font-medium">
@@ -50,7 +62,7 @@ export function TopMerchants({ merchants }: TopMerchantsProps) {
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

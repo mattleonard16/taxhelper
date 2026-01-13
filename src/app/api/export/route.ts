@@ -274,7 +274,7 @@ export async function GET(request: NextRequest) {
                 );
             }
 
-            const { from, to, type, search, minAmount, maxAmount, category, isDeductible } = parseResult.data;
+            const { from, to, type, search, minAmount, maxAmount, category, isDeductible, priority } = parseResult.data;
             const where = buildTransactionSearchWhere(user.id, {
                 from,
                 to,
@@ -284,6 +284,7 @@ export async function GET(request: NextRequest) {
                 maxAmount,
                 category,
                 isDeductible,
+                priority,
             });
 
             const transactions = await prisma.transaction.findMany({

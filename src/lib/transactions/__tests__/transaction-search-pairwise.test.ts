@@ -177,4 +177,13 @@ describe("transaction search pairwise coverage", () => {
       }
     }
   );
+
+  it("adds priority filter when provided", () => {
+    const parsed = transactionQuerySchema.parse({
+      priority: "HIGH",
+    });
+
+    const where = buildTransactionSearchWhere("user_1", parsed);
+    expect(where.priority).toBe("HIGH");
+  });
 });

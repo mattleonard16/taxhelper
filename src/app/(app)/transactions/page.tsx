@@ -111,6 +111,7 @@ export default function TransactionsPage() {
       if (debouncedMaxAmount) params.set("maxAmount", debouncedMaxAmount);
       if (filters.category !== "all") params.set("category", filters.category);
       if (filters.isDeductible !== "all") params.set("isDeductible", filters.isDeductible);
+      if (filters.priority && filters.priority !== "all") params.set("priority", filters.priority);
       if (idsFilter.length > 0) params.set("ids", idsFilter.join(","));
 
       const response = await fetch(`/api/transactions?${params}`);
@@ -124,7 +125,7 @@ export default function TransactionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, filters.fromDate, filters.toDate, filters.typeFilter, filters.category, filters.isDeductible, debouncedSearch, debouncedMinAmount, debouncedMaxAmount, idsFilter, loaded]);
+  }, [page, filters.fromDate, filters.toDate, filters.typeFilter, filters.category, filters.isDeductible, filters.priority, debouncedSearch, debouncedMinAmount, debouncedMaxAmount, idsFilter, loaded]);
 
   useEffect(() => {
     fetchTransactions();
@@ -487,6 +488,26 @@ export default function TransactionsPage() {
                 <SelectItem value="all">All</SelectItem>
                 <SelectItem value="true">Yes</SelectItem>
                 <SelectItem value="false">No</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-muted-foreground">Priority</label>
+            <Select
+              value={filters.priority || "all"}
+              onValueChange={(value) => {
+                updateFilter("priority", value);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="HIGH">High</SelectItem>
+                <SelectItem value="MEDIUM">Medium</SelectItem>
+                <SelectItem value="LOW">Low</SelectItem>
               </SelectContent>
             </Select>
           </div>

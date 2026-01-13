@@ -16,6 +16,12 @@ const TYPE_LABELS: Record<string, string> = {
   OTHER: "Other",
 };
 
+const PRIORITY_LABELS: Record<string, string> = {
+  HIGH: "High",
+  MEDIUM: "Medium",
+  LOW: "Low",
+};
+
 export function FilterChips({ filters, onRemove }: FilterChipsProps) {
   const chips: Array<{ key: keyof TransactionFilters; label: string; defaultValue: string }> = [];
 
@@ -52,6 +58,13 @@ export function FilterChips({ filters, onRemove }: FilterChipsProps) {
     chips.push({
       key: "isDeductible",
       label: filters.isDeductible === "true" ? "Deductible" : "Not Deductible",
+      defaultValue: "all"
+    });
+  }
+  if (filters.priority !== "all") {
+    chips.push({
+      key: "priority",
+      label: `Priority: ${PRIORITY_LABELS[filters.priority] || filters.priority}`,
       defaultValue: "all"
     });
   }
