@@ -2,10 +2,22 @@
  * TDD Tests for Receipt Upload API
  */
 
+// @vitest-environment node
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ReceiptJobRepository } from '@/lib/receipt/receipt-job-repository';
 import { POST } from '../receipts/upload/route';
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+function makeRequest(url: string, formData: FormData): NextRequest {
+    // Avoid relying on NextRequest multipart parsing in tests.
+    return {
+        url,
+        method: 'POST',
+        nextUrl: { pathname: new URL(url).pathname },
+        formData: async () => formData,
+    } as unknown as NextRequest;
+}
 
 // Mock dependencies
 vi.mock('@/lib/api-utils', () => ({
@@ -68,10 +80,7 @@ describe('Receipt Upload API', () => {
         const formData = new FormData();
         formData.append('file', new Blob(['test'], { type: 'image/jpeg' }), 'test.jpg');
 
-        const request = new NextRequest('http://localhost:3000/api/receipts/upload', {
-            method: 'POST',
-            body: formData,
-        });
+        const request = makeRequest('http://localhost:3000/api/receipts/upload', formData);
 
         const response = await POST(request);
         expect(response.status).toBe(401);
@@ -83,10 +92,7 @@ describe('Receipt Upload API', () => {
 
         const formData = new FormData();
 
-        const request = new NextRequest('http://localhost:3000/api/receipts/upload', {
-            method: 'POST',
-            body: formData,
-        });
+        const request = makeRequest('http://localhost:3000/api/receipts/upload', formData);
 
         const response = await POST(request);
         expect(response.status).toBe(400);
@@ -102,10 +108,7 @@ describe('Receipt Upload API', () => {
         const formData = new FormData();
         formData.append('file', new Blob(['test'], { type: 'text/plain' }), 'test.txt');
 
-        const request = new NextRequest('http://localhost:3000/api/receipts/upload', {
-            method: 'POST',
-            body: formData,
-        });
+        const request = makeRequest('http://localhost:3000/api/receipts/upload', formData);
 
         const response = await POST(request);
         expect(response.status).toBe(400);
@@ -123,10 +126,7 @@ describe('Receipt Upload API', () => {
         formData.append('file', file);
         formData.append('type', 'SALES_TAX');
 
-        const request = new NextRequest('http://localhost:3000/api/receipts/upload', {
-            method: 'POST',
-            body: formData,
-        });
+        const request = makeRequest('http://localhost:3000/api/receipts/upload', formData);
 
         const response = await POST(request);
         const body = await response.json();
@@ -152,10 +152,7 @@ describe('Receipt Upload API', () => {
         formData.append('ocrText', 'WALMART\nGroceries $25.00\nTAX $2.00\nTOTAL $27.00\n03/15/2024');
         formData.append('type', 'SALES_TAX');
 
-        const request = new NextRequest('http://localhost:3000/api/receipts/upload', {
-            method: 'POST',
-            body: formData,
-        });
+        const request = makeRequest('http://localhost:3000/api/receipts/upload', formData);
 
         const response = await POST(request);
         expect(response.status).toBe(200);
@@ -179,10 +176,7 @@ describe('Receipt Upload API', () => {
         formData.append('ocrText', 'CLEAR TEXT TOTAL $12.34');
         formData.append('ocrConfidence', '0.95');
 
-        const request = new NextRequest('http://localhost:3000/api/receipts/upload', {
-            method: 'POST',
-            body: formData,
-        });
+        const request = makeRequest('http://localhost:3000/api/receipts/upload', formData);
 
         const response = await POST(request);
         expect(response.status).toBe(200);
@@ -223,10 +217,7 @@ describe('Receipt Upload API', () => {
         formData.append('ocrText', 'blurry text with no totals');
         formData.append('ocrConfidence', '0.2');
 
-        const request = new NextRequest('http://localhost:3000/api/receipts/upload', {
-            method: 'POST',
-            body: formData,
-        });
+        const request = makeRequest('http://localhost:3000/api/receipts/upload', formData);
 
         const response = await POST(request);
         const body = await response.json();
@@ -249,10 +240,7 @@ describe('Receipt Upload API', () => {
         formData.append('file', file);
         formData.append('ocrText', 'TARGET\nShopping $100.00\nTAX $8.25\nTOTAL $108.25\n03/20/2024');
 
-        const request = new NextRequest('http://localhost:3000/api/receipts/upload', {
-            method: 'POST',
-            body: formData,
-        });
+        const request = makeRequest('http://localhost:3000/api/receipts/upload', formData);
 
         const response = await POST(request);
         expect(response.status).toBe(200);
@@ -286,10 +274,7 @@ describe('Receipt Upload API', () => {
         formData.append('file', file);
         formData.append('type', 'SALES_TAX');
 
-        const request = new NextRequest('http://localhost:3000/api/receipts/upload?async=1', {
-            method: 'POST',
-            body: formData,
-        });
+        const request = makeRequest('http://localhost:3000/api/receipts/upload?async=1', formData);
 
         const response = await POST(request);
         const body = await response.json();

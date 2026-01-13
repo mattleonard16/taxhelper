@@ -99,6 +99,9 @@ model Transaction {
   categoryCode  String?       // e.g., "MEALS", "TRAVEL", "OFFICE"
   isDeductible  Boolean       @default(false)
   
+  // Priority level for transaction management
+  priority      TransactionPriority @default(MEDIUM)
+  
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
@@ -107,12 +110,14 @@ model Transaction {
   @@index([date])
   @@index([type])
   @@index([isDeductible])
+  @@index([priority])
   // Composite indexes for common query patterns
   @@index([userId, date])           // For date range queries
   @@index([userId, type, date])     // For filtered type queries
   @@index([userId, isDeductible])   // For deductible filtering
   @@index([userId, merchant])       // For merchant search
   @@index([userId, categoryCode])   // For category filtering
+  @@index([userId, priority])       // For priority filtering
 }
 
 model TaxTemplate {
@@ -206,6 +211,12 @@ enum TransactionType {
   SALES_TAX
   INCOME_TAX
   OTHER
+}
+
+enum TransactionPriority {
+  HIGH
+  MEDIUM
+  LOW
 }
 
 // Receipt processing job for async OCR/LLM extraction

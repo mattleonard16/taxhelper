@@ -64,13 +64,23 @@ export function OnboardingChecklist({
 
   // Check localStorage for dismissal
   useEffect(() => {
-    const isDismissed = localStorage.getItem("onboarding-dismissed") === "true";
-    setDismissed(isDismissed);
+    if (typeof window === "undefined") return;
+    try {
+      const isDismissed = window.localStorage?.getItem?.("onboarding-dismissed") === "true";
+      setDismissed(Boolean(isDismissed));
+    } catch {
+      setDismissed(false);
+    }
   }, []);
 
   const handleDismiss = () => {
-    localStorage.setItem("onboarding-dismissed", "true");
-    setDismissed(true);
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage?.setItem?.("onboarding-dismissed", "true");
+      setDismissed(true);
+    } catch {
+      setDismissed(true);
+    }
   };
 
   const handleLoadSampleData = async () => {
