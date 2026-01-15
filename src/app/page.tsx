@@ -1,10 +1,39 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { getSession } from "@/lib/auth-utils";
 import { Button } from "@/components/ui/button";
 import { FeaturesSection } from "@/components/landing/features-section";
-import { InteractiveDemo } from "@/components/landing/interactive-demo";
 import { ArrowRight, Receipt, TrendingUp, Search } from "lucide-react";
+
+const InteractiveDemo = dynamic(
+  () =>
+    import("@/components/landing/interactive-demo").then(
+      (mod) => mod.InteractiveDemo
+    ),
+  {
+    loading: () => <InteractiveDemoSkeleton />,
+  }
+);
+
+function InteractiveDemoSkeleton() {
+  return (
+    <section className="mx-auto mt-24 max-w-6xl">
+      <div className="text-center mb-12">
+        <div className="mx-auto h-8 w-2/3 rounded-lg bg-muted" />
+        <div className="mx-auto mt-4 h-4 w-1/2 rounded-lg bg-muted/70" />
+      </div>
+      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+        <div className="space-y-3">
+          {[1, 2, 3].map((item) => (
+            <div key={item} className="h-16 rounded-2xl border border-border bg-card" />
+          ))}
+        </div>
+        <div className="h-[480px] rounded-3xl border border-border bg-card" />
+      </div>
+    </section>
+  );
+}
 
 export default async function HomePage() {
   const session = await getSession();

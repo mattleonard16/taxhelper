@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Wallet,
@@ -35,20 +35,49 @@ const TABS = [
   },
 ];
 
+const RECENT_ACTIVITY = [
+  { name: "Coffee Shop", time: "2m ago", tax: "$0.45" },
+  { name: "Electronics Store", time: "2h ago", tax: "$12.50" },
+  { name: "Grocery Market", time: "5h ago", tax: "$3.20" },
+];
+
+const DEDUCTION_PILLS = [
+  { icon: Receipt, text: "Meals: $450", position: "top" as const },
+  { icon: PiggyBank, text: "Travel: $890", position: "bottom" as const },
+];
+
+const SCANNER_LINES = [1, 2, 3, 4];
+
+function usePageVisibility() {
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    const handleVisibility = () => setIsVisible(!document.hidden);
+    handleVisibility();
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
+
+  return isVisible;
+}
+
 export function InteractiveDemo() {
   const [activeTab, setActiveTab] = useState(0);
   const [paused, setPaused] = useState(false);
+  const isPageVisible = usePageVisibility();
+  const handlePause = useCallback(() => setPaused(true), []);
+  const handleResume = useCallback(() => setPaused(false), []);
 
   // Auto-advance tabs
   useEffect(() => {
-    if (paused) return;
+    if (paused || !isPageVisible) return;
 
     const interval = setInterval(() => {
       setActiveTab((prev) => (prev + 1) % TABS.length);
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [paused]);
+  }, [paused, isPageVisible]);
 
   return (
     <section className="mx-auto mt-24 max-w-6xl">
@@ -66,8 +95,8 @@ export function InteractiveDemo() {
         {/* Navigation Panel */}
         <div
           className="flex flex-col gap-3"
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
+          onMouseEnter={handlePause}
+          onMouseLeave={handleResume}
         >
           {TABS.map((tab, index) => {
             const isActive = activeTab === index;
@@ -116,8 +145,8 @@ export function InteractiveDemo() {
         {/* Preview Panel */}
         <div
           className="relative min-h-[480px] overflow-hidden rounded-3xl border border-border bg-card p-6"
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
+          onMouseEnter={handlePause}
+          onMouseLeave={handleResume}
         >
           <AnimatePresence mode="wait">
             {activeTab === 0 && <TrackingDemo key="tracking" />}
@@ -180,12 +209,8 @@ function TrackingDemo() {
           <Badge variant="outline" className="text-xs">Live</Badge>
         </div>
         <div className="space-y-3">
-          {[
-            { name: "Coffee Shop", time: "2m ago", tax: "$0.45" },
-            { name: "Electronics Store", time: "2h ago", tax: "$12.50" },
-            { name: "Grocery Market", time: "5h ago", tax: "$3.20" },
-          ].map((item, i) => (
-            <div key={i} className="flex items-center justify-between text-sm">
+          {RECENT_ACTIVITY.map((item) => (
+            <div key={item.name} className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-3">
                 <div className="size-2 rounded-full bg-primary" />
                 <span>{item.name}</span>
@@ -287,23 +312,26 @@ function DeductionsDemo() {
       </motion.div>
 
       {/* Floating deduction pills */}
-      <motion.div
-        className="absolute top-10 right-4 rounded-full bg-card px-3 py-1 text-xs font-medium border border-border text-foreground flex items-center gap-1"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
-        <Receipt className="size-3" /> <span className="tabular-nums">Meals: $450</span>
-      </motion.div>
+      {DEDUCTION_PILLS.map((pill) => {
+        const Icon = pill.icon;
+        const positionClass =
+          pill.position === "top" ? "top-10 right-4" : "bottom-20 left-4";
 
-      <motion.div
-        className="absolute bottom-20 left-4 rounded-full bg-card px-3 py-1 text-xs font-medium border border-border text-foreground flex items-center gap-1"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-      >
-        <PiggyBank className="size-3" /> <span className="tabular-nums">Travel: $890</span>
-      </motion.div>
+        return (
+          <motion.div
+            key={pill.text}
+            className={cn(
+              "absolute rounded-full bg-card px-3 py-1 text-xs font-medium border border-border text-foreground flex items-center gap-1",
+              positionClass
+            )}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: pill.position === "top" ? 0.3 : 0.4 }}
+          >
+            <Icon className="size-3" /> <span className="tabular-nums">{pill.text}</span>
+          </motion.div>
+        );
+      })}
     </motion.div>
   );
 }
@@ -328,7 +356,7 @@ function ScannerDemo() {
 
         {/* Receipt Body */}
         <div className="space-y-3 p-6">
-          {[1, 2, 3, 4].map((i) => (
+          {SCANNER_LINES.map((i) => (
             <div key={i} className="flex justify-between">
               <div className="h-2 w-20 rounded bg-muted/50" />
               <div className="h-2 w-8 rounded bg-muted/50" />

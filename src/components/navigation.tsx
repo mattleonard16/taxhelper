@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,9 +26,16 @@ const navItems = [
   { href: "/settings", label: "Settings" },
 ];
 
-export function Navigation() {
+type NavigationProps = {
+  user?: {
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  } | null;
+};
+
+export function Navigation({ user }: NavigationProps) {
   const pathname = usePathname();
-  const { data: session } = useSession();
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -71,9 +78,9 @@ export function Navigation() {
                 data-testid="user-menu-trigger"
               >
                 <Avatar className="h-11 w-11 md:h-9 md:w-9">
-                  <AvatarImage src={session?.user?.image || undefined} />
+                  <AvatarImage src={user?.image || undefined} />
                   <AvatarFallback className="bg-primary text-primary-foreground">
-                    {session?.user?.name?.[0] || session?.user?.email?.[0]?.toUpperCase() || "U"}
+                    {user?.name?.[0] || user?.email?.[0]?.toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -81,8 +88,8 @@ export function Navigation() {
             <DropdownMenuContent align="end" className="w-56">
               <div className="flex items-center gap-2 p-2">
                 <div className="flex flex-col space-y-0.5">
-                  <p className="text-sm font-medium">{session?.user?.name || "User"}</p>
-                  <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
+                  <p className="text-sm font-medium">{user?.name || "User"}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
               </div>
               <DropdownMenuSeparator />

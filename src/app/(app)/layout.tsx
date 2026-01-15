@@ -16,7 +16,7 @@ export default async function AppLayout({
 
   return (
     <div className="min-h-screen">
-      <Navigation />
+      <Navigation user={session.user} />
       <main className="mx-auto max-w-7xl px-4 py-8 pb-24 sm:px-6 md:pb-8 lg:px-8">
         {children}
       </main>
