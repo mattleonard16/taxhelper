@@ -1,46 +1,40 @@
-"use client";
+import {
+  Camera,
+  AlertTriangle,
+  TrendingUp,
+  BarChart3,
+} from "lucide-react";
+const COFFEE_ACTIVITY = [
+  { date: "Today", amount: "$5.50", tax: "$0.44", scanned: true },
+  { date: "Mon", amount: "$5.50", tax: "$0.44" },
+  { date: "Fri", amount: "$5.50", tax: "$0.44" },
+  { date: "Wed", amount: "$5.50", tax: "$0.44" },
+];
 
-import { motion, type Variants } from "motion/react";
-import { Camera, AlertTriangle, TrendingUp, BarChart3 } from "lucide-react";
+const SNAPSHOT_STATS = [
+  { label: "Today", value: "$2.34", change: "+12%", positive: false },
+  { label: "This Week", value: "$18.92", change: "+5%", positive: false },
+  { label: "This Month", value: "$87.45", change: "-2%", positive: true },
+  { label: "This Year", value: "$1,247", change: "+8%", positive: false },
+];
 
 export function FeaturesSection() {
 
-  const fadeInUp: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.2, ease: "easeOut" as const }
-    }
-  };
-
   return (
     <section id="features" className="mt-24">
-      <motion.div
-        className="text-center mb-12"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-100px" }}
-        variants={fadeInUp}
-      >
+      <div className="text-center mb-12">
         <h2 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
           See what you&apos;re actually paying
         </h2>
         <p className="mt-4 text-lg text-muted-foreground text-pretty">
           Real examples from everyday spending
         </p>
-      </motion.div>
+      </div>
 
       {/* Bento Grid Layout */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {/* Example 1: Coffee Shop Pattern - Large Card */}
-        <motion.div
-          className="lg:col-span-2 rounded-3xl border border-border bg-card p-6 lg:p-8 cursor-pointer"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-          variants={fadeInUp}
-        >
+        <div className="lg:col-span-2 rounded-3xl border border-border bg-card p-6 lg:p-8 transition hover:border-primary/40">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex-1">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
@@ -72,13 +66,8 @@ export function FeaturesSection() {
             <div className="flex-shrink-0 lg:ml-6">
               <div className="rounded-2xl border border-border bg-background p-4">
                 <div className="space-y-3">
-                  {[
-                    { date: "Today", amount: "$5.50", tax: "$0.44", scanned: true },
-                    { date: "Mon", amount: "$5.50", tax: "$0.44" },
-                    { date: "Fri", amount: "$5.50", tax: "$0.44" },
-                    { date: "Wed", amount: "$5.50", tax: "$0.44" },
-                  ].map((tx, i) => (
-                    <div key={i} className="flex items-center justify-between text-sm gap-4">
+                  {COFFEE_ACTIVITY.map((tx) => (
+                    <div key={tx.date} className="flex items-center justify-between text-sm gap-4">
                       <div className="flex items-center gap-2">
                         <span className="text-muted-foreground w-10">{tx.date}</span>
                         {tx.scanned && (
@@ -98,16 +87,10 @@ export function FeaturesSection() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Example 2: High Tax Merchant - Tall Card */}
-        <motion.div
-          className="rounded-3xl border border-border bg-card p-6 cursor-pointer"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-          variants={fadeInUp}
-        >
+        <div className="rounded-3xl border border-border bg-card p-6 transition hover:border-primary/40">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
             <TrendingUp className="size-3" />
             Tax Drag Alert
@@ -141,16 +124,10 @@ export function FeaturesSection() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Example 3: Monthly Overview - Full Width */}
-        <motion.div
-          className="md:col-span-2 lg:col-span-3 rounded-3xl border border-border bg-card p-6 lg:p-8 cursor-pointer"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-          variants={fadeInUp}
-        >
+        <div className="md:col-span-2 lg:col-span-3 rounded-3xl border border-border bg-card p-6 lg:p-8 transition hover:border-primary/40">
           <div className="flex items-center gap-3 mb-6">
             <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
               <BarChart3 className="size-5 text-primary" />
@@ -163,13 +140,8 @@ export function FeaturesSection() {
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { label: "Today", value: "$2.34", change: "+12%", positive: false },
-              { label: "This Week", value: "$18.92", change: "+5%", positive: false },
-              { label: "This Month", value: "$87.45", change: "-2%", positive: true },
-              { label: "This Year", value: "$1,247", change: "+8%", positive: false },
-            ].map((stat, i) => (
-              <div key={i} className="rounded-2xl border border-border bg-background p-4">
+            {SNAPSHOT_STATS.map((stat) => (
+              <div key={stat.label} className="rounded-2xl border border-border bg-background p-4">
                 <div className="text-xs text-muted-foreground">{stat.label}</div>
                 <div className="mt-2 text-2xl font-bold tabular-nums">{stat.value}</div>
                 <div className="mt-1 text-xs text-muted-foreground">
@@ -181,7 +153,7 @@ export function FeaturesSection() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

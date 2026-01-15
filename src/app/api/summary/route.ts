@@ -144,8 +144,10 @@ export async function GET(request: NextRequest) {
     // Build daily tax map from database aggregation
     const dailyTax: Record<string, Prisma.Decimal> = {};
     for (const row of dailyAggregations) {
-      // date_key comes as a Date object from PostgreSQL DATE() function
-      const dateKey = row.date_key.toISOString().split("T")[0];
+      const dateKey =
+        typeof row.date_key === "string"
+          ? row.date_key
+          : row.date_key.toISOString().split("T")[0];
       dailyTax[dateKey] = row.total_tax || new Prisma.Decimal(0);
     }
 

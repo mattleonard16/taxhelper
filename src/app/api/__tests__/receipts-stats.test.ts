@@ -28,6 +28,7 @@ vi.mock("@/lib/prisma", () => ({
       aggregate: vi.fn(),
     },
     transaction: {
+      groupBy: vi.fn(),
       aggregate: vi.fn(),
     },
   },
@@ -51,13 +52,12 @@ describe("receipt stats API", () => {
     });
 
     vi.mocked(prisma.receiptJob.groupBy)
-      .mockResolvedValueOnce([{ status: "COMPLETED", _count: { id: 1 } }] as never)
-      .mockResolvedValueOnce([] as never);
+      .mockResolvedValue([{ status: "COMPLETED", _count: { id: 1 } }] as never);
 
     vi.mocked(prisma.receiptJob.aggregate)
-      .mockResolvedValueOnce({ _sum: { totalAmount: null }, _count: { id: 0 } } as never)
-      .mockResolvedValueOnce({ _avg: { extractionConfidence: null } } as never);
+      .mockResolvedValue({ _avg: { extractionConfidence: null } } as never);
 
+    vi.mocked(prisma.transaction.groupBy).mockResolvedValue([] as never);
     vi.mocked(prisma.transaction.aggregate).mockResolvedValue({
       _sum: { totalAmount: null, taxAmount: null },
       _count: { id: 0 },
